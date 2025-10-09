@@ -1,19 +1,19 @@
 # Developer Notes
 
-This document provides guidance for developing and maintaining the {{ cookiecutter.toolbox_name }} toolbox.
+This document provides guidance for developing and maintaining the AIDIF Matlab Toolbox toolbox.
 
 ## 📁 Project Structure
 
 ```
-{{ cookiecutter.repo_name }}/
-├── {{ "%-47s" % ("src/" + cookiecutter.namespace_name + "/") }}# Main toolbox source code
-│   ├── +{{ "%-42s" % (cookiecutter.namespace_name + "/") }}# MATLAB package namespace
+aidif-toolbox/
+├── src/AIDIF/                                     # Main toolbox source code
+│   ├── +AIDIF/                                    # MATLAB package namespace
 │   ├── Contents.m                                 # Toolbox contents listing
 │   └── gettingStarted.m                           # Getting started guide
 ├── tests/                                         # Unit tests and test utilities
-│   ├── +{{ "%-42s" % (cookiecutter.namespace_name + "/") }}# Namespace for unit tests and test utilites
+│   ├── +AIDIF/                                    # Namespace for unit tests and test utilites
 ├── tools/                                         # Development and build tools
-│   ├── +{{ "%-42s" % (cookiecutter.namespace_name + "tools/") }}# Toolbox utilities
+│   ├── +AIDIFtools/                               # Toolbox utilities
 │   └── MLToolboxInfo.json                         # Toolbox metadata
 └── docs/                                          # Documentation
     ├── buildDocs.m                                # Documentation builder
@@ -27,15 +27,15 @@ This document provides guidance for developing and maintaining the {{ cookiecutt
 
 ```matlab
 % Add the toolbox to your MATLAB path
-addpath(genpath('src/{{ cookiecutter.namespace_name }}'));
+addpath(genpath('src/AIDIF'));
 
 % Verify installation
-{{ cookiecutter.namespace_name }}.toolboxversion()
+AIDIF.toolboxversion()
 ```
 
 ### 2. Writing Functions
 
-**Location**: Place your main functions in `src/{{ cookiecutter.namespace_name }}/+{{ cookiecutter.namespace_name }}/`
+**Location**: Place your main functions in `src/AIDIF/+AIDIF/`
 
 **Naming Convention**: Use camelCase for function names and PascalCase for class names
 
@@ -45,8 +45,8 @@ function output = myFunction(input, options)
 % MYFUNCTION Brief description of what the function does
 %
 % Syntax:
-%   output = {{ cookiecutter.namespace_name }}.myFunction(input)
-%   output = {{ cookiecutter.namespace_name }}.myFunction(input, options)
+%   output = AIDIF.myFunction(input)
+%   output = AIDIF.myFunction(input, options)
 %
 % Description:
 %   Detailed description of the function's purpose and behavior.
@@ -69,16 +69,16 @@ function output = myFunction(input, options)
 %
 % Examples:
 %   % Basic usage
-%   result = {{ cookiecutter.namespace_name }}.myFunction(data);
+%   result = AIDIF.myFunction(data);
 %
 %   % With options
 %   opts.field1 = value;
-%   result = {{ cookiecutter.namespace_name }}.myFunction(data, opts);
+%   result = AIDIF.myFunction(data, opts);
 %
 % See also: RELATEDFUNCTION1, RELATEDFUNCTION2
 %
-% {{ cookiecutter.toolbox_name }}
-% Copyright (c) {{ cookiecutter.author_name }}, {{ cookiecutter.author_company }}
+% AIDIF Matlab Toolbox
+% Copyright (c) Lane Desborough, aidif.org
 
 arguments
     input {mustBeNumeric}
@@ -110,7 +110,7 @@ end
 
 function setupOnce(testCase)
 % Setup for the entire test suite
-addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'src', '{{ cookiecutter.namespace_name }}'));
+addpath(fullfile(fileparts(mfilename('fullpath')), '..', 'src', 'AIDIF'));
 end
 
 function setup(testCase)
@@ -121,7 +121,7 @@ end
 function testBasicFunctionality(testCase)
 % Test basic functionality
 input = testCase.TestData.sampleData;
-result = {{ cookiecutter.namespace_name }}.myFunction(input);
+result = AIDIF.myFunction(input);
 verifySize(testCase, result, size(input));
 end
 
@@ -129,13 +129,13 @@ function testWithOptions(testCase)
 % Test with optional parameters
 input = testCase.TestData.sampleData;
 options.field1 = 2;
-result = {{ cookiecutter.namespace_name }}.myFunction(input, options);
+result = AIDIF.myFunction(input, options);
 verifyClass(testCase, result, 'double');
 end
 
 function testErrorHandling(testCase)
 % Test error conditions
-verifyError(testCase, @() {{ cookiecutter.namespace_name }}.myFunction('invalid'), ...
+verifyError(testCase, @() AIDIF.myFunction('invalid'), ...
     'MATLAB:validators:mustBeNumeric');
 end
 ```
@@ -169,10 +169,10 @@ Todo
 
 ```matlab
 % Package the toolbox
-{{ cookiecutter.namespace_name }}tools.packageToolbox()
+AIDIFtools.packageToolbox()
 
 % Install locally for testing
-{{ cookiecutter.namespace_name }}tools.installMatBox()
+AIDIFtools.installMatBox()
 ```
 
 ## 📝 Coding Standards
@@ -203,7 +203,7 @@ end
 
 % Provide meaningful error messages
 if size(input, 2) ~= 3
-    error('{{ cookiecutter.namespace_name | upper }}:invalidInput', ...
+    error('AIDIF:invalidInput', ...
         'Input must have exactly 3 columns, got %d', size(input, 2));
 end
 ```
@@ -214,15 +214,15 @@ end
 
 ```matlab
 % Check code quality
-checkcode('src/{{ cookiecutter.namespace_name }}/')
+checkcode('src/AIDIF/')
 
 % Profile performance
 profile on
-{{ cookiecutter.namespace_name }}.myFunction(data);
+AIDIF.myFunction(data);
 profile viewer
 
 % Dependency analysis
-[fList, pList] = matlab.codetools.requiredFilesAndProducts('src/{{ cookiecutter.namespace_name }}');
+[fList, pList] = matlab.codetools.requiredFilesAndProducts('src/AIDIF');
 ```
 
 ### Git Workflow
@@ -243,7 +243,7 @@ git push origin feature/new-functionality
 
 - **MATLAB Version Compatibility**: Toolbox packaging using [MatBox](https://github.com/ehennestad/MatBox) requires R2023a+.
 
-- **Path Management**: Always use relative paths and the `{{ cookiecutter.namespace_name }}tools.projectdir()` function
+- **Path Management**: Always use relative paths and the `AIDIFtools.projectdir()` function
 - **Testing**: Run tests before committing changes
 - **Documentation**: Update documentation when adding new features
 - **Versioning**: Follow semantic versioning (MAJOR.MINOR.PATCH)
@@ -262,4 +262,4 @@ git push origin feature/new-functionality
 - Check existing issues in the repository
 - Review the documentation in `docs/`
 - Consult the MATLAB documentation
-- Contact the maintainers: {{ cookiecutter.author_email }}
+- Contact the maintainers: lane@aidif.org

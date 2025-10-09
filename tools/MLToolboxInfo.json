@@ -1,0 +1,14 @@
+{
+    "Namespace" : "AIDIF",
+    "ToolboxOptions": {
+        "Identifier": "d8398416-ac8d-4bac-bfcb-78c110337f5e",
+        "ToolboxName": "AIDIF Matlab Toolbox",
+        "AuthorName": "Lane Desborough",
+        "AuthorEmail": "lane@aidif.org",
+        "AuthorCompany": "aidif.org",
+        "Summary": "A comprehensive set of validated models and tools to perform pre-clinical evaluation for AID systems and their components.",
+        "Description": "The AID Interoperability Framework (AIDIF) is intended to be a public, modular computational modeling and simulation environment for development and evaluation of AID systems and components. Building on over a decade of proprietary simulator development experience, AIDIF aims to integrate validated models of CGMs, insulin pumps, and control algorithms with physiological and behavioral models derived from public high quality and representative clinical data.",
+        "MinimumMatlabRelease": "R2019b",
+        "MaximumMatlabRelease": ""
+    }
+}
