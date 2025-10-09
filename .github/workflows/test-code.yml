@@ -13,6 +13,8 @@ on:
     paths-ignore:
       - '*md'
       - '.github/**'
+  
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -96,6 +98,10 @@ jobs:
               fileList = string(fullfile({files.folder}, {files.name}));
               exclude = ["Contents.m", "gettingStarted.m", "toolboxversion.m", "toolboxdir.m"];
               fileList = fileList(~ismember(string({files.name}), exclude));
+              
+              for i = 1:length(fileList)
+                disp(fileList(i));
+              end
               
               matbox.tasks.testToolbox(pwd, ...
                 'SourceFolderName', '${{ env.SRC_DIR }}', ...
