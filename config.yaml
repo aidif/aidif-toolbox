@@ -1,36 +1,20 @@
 # General GitHub Repository Settings
 repository:
   license: MIT      # Select a license from the options below
-  # License Options:
-  # - None
-  # - AGPL-3.0 
-  # - Apache-2.0 
-  # - BSD-2-Clause 
-  # - BSD-3-Clause 
-  # - EPL-1.0 
-  # - GPL-2.0 
-  # - GPL-3.0 
-  # - LGPL-2.1 
-  # - LGPL-3.0 
-  # - MIT 
-  # - MPL-2.0 
-  # - Unlicense 
 
 # MATLAB Toolbox Settings
 matlab_toolbox:
-  namespace_name: mytoolbox                         # A unique namespace for your toolbox
-  toolbox_name: My Toolbox                          # Name of the MATLAB toolbox                  
-  author_name: John Doe                     
-  author_email: johndoe@example.com         
-  author_company: John Doe Inc.                     # Author's company or organization
-  toolbox_summary: A short summary of what the toolbox does
+  namespace_name: AIDIF                         # A unique namespace for your toolbox
+  toolbox_name: AIDIF Matlab Toolbox            # Name of the MATLAB toolbox                  
+  author_name: Lane Desborough                     
+  author_email: lane@aidif.org         
+  author_company: aidif.org                     # Author's company or organization
+  toolbox_summary: A comprehensive set of validated models and tools to perform pre-clinical evaluation for AID systems and their components. 
   toolbox_description: |
-    A detailed description of your MATLAB toolbox.
-    This can span multiple lines to provide users with enough information
-    on what your toolbox offers and how it can be used.
+    The AID Interoperability Framework (AIDIF) is intended to be a public, modular computational modeling and simulation environment for development and evaluation of AID systems and components. Building on over a decade of proprietary simulator development experience, AIDIF aims to integrate validated models of CGMs, insulin pumps, and control algorithms with physiological and behavioral models derived from public high quality and representative clinical data. 
   dependencies:                                     # Required MATLAB products
     - MATLAB
-    - Statistics and Machine Learning Toolbox
+    - Matlab Simulink
 
 # Publishing options
 codecov:
