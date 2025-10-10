@@ -4,13 +4,13 @@ classdef ToolboxTest <  matlab.unittest.TestCase
 
     methods (Test)
         function testToolboxDir(testCase)
-            pathStr = matbox.toolboxdir();
+            pathStr = AIDIF.toolboxdir();
             testCase.verifyClass(pathStr, 'char')
             testCase.verifyTrue(isfolder(pathStr))
         end
 
         function testToolboxVersion(testCase)
-            versionStr = matbox.toolboxversion();
+            versionStr = AIDIF.toolboxversion();
             testCase.verifyClass(versionStr, 'char')
             testCase.verifyTrue(startsWith(versionStr, 'Version'))
         end

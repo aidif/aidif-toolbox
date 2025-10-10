@@ -1,46 +1,162 @@
-name: Test code
+name: Test Code New
 
 on:
   push:
-    branches: main
+    branches: 
+      - main
     paths-ignore:
       - '*md'
-      - '.github/**'
       - 'config.yaml'
-
-
+  
   pull_request:
     branches: main
     paths-ignore:
       - '*md'
-      - '.github/**'
+      - 'config.yaml'
+ 
+  workflow_dispatch:
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  test-code:
-    if: github.run_number > 1
-    name: Analyse and test code
-    uses: ehennestad/matbox-actions/.github/workflows/test-code-workflow.yml@v1
-    with:
-      # Path to directory with code. Code coverage and code analysis will run 
-      # on the contents of the specified folder (and subfolders)
-      source_directory: src
-      
+env:
+      # Path to directory with code. Code coverage and code analysis will run on
+      SRC_DIR: src      
       # Path to directory with (CI) tools or tests. Used for finding unit tests
-      # and running customized MatBox tasks
-      tools_directory: tools
-
+      TOOLS_DIR: tools
+      TESTS_DIR: tests
       # Name of MATLAB Release to use for running test suites and code analysis
-      matlab_release: latest
-      
+      MATLAB_RELEASE: latest
       # Whether to cache the MATLAB installation for faster subsequent setups
-      matlab_use_cache: false
-      
+      CACHE_MATLAB: true
       # Optional list of MATLAB products to install. Example if adding multiple 
       # products (use ">" and one product per line):
       # matlab_products: >
       #   Image_Processing_Toolbox
       #   Statistics_and_Machine_Learning_Toolbox
+    
+      REPORTS_DIR: docs/reports
+      
+jobs:
+  test-code:
+    if: github.run_number > 1
+    name: Analyse and test code new
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+          cache: ${{ env.CACHE_MATLAB }}
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+
+
+      - name: Check Code for MATLAB issues
+      # This performs static checks
+      # Creates a "code issues" SVG badge
+        uses: matlab-actions/run-command@v2
+        if: always()
+        with:
+            command: |
+                addpath(genpath("${{ env.TOOLS_DIR }}"));
+                if exist("codecheckToolbox", "file")
+                    codecheckToolbox();
+                else
+                    matbox.tasks.codecheckToolbox(pwd, ...
+                    "FoldersToCheck", "${{ env.SRC_DIR }}");
+                end
+
+      - name: Upload Code Check SARIF Report to github
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true # Will fail for MATLAB release < R2023a
+        with:
+            sarif_file: docs/reports/code_issues.sarif
+
+
+      
+      - name: Run MATLAB test suites
+      # This performs unit testing and test coverage using MatBox
+      # Creates a "tests" SVG badge
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath('${{ env.SRC_DIR }}'));
+            addpath(genpath('${{ env.TOOLS_DIR }}'));
+            addpath(genpath('${{ env.TESTS_DIR }}'));
+            if exist("testToolbox", "file")
+              testToolbox('ReportSubdirectory', '', 'CreateBadge', true, 'OutputDetail', 'html');
+            else
+              files = dir(fullfile('${{ env.SRC_DIR }}', '**', '*.m'));
+              fileList = string(fullfile({files.folder}, {files.name}));
+              exclude = ["Contents.m", "gettingStarted.m"];
+              fileList = fileList(~ismember(string({files.name}), exclude));
+              
+              matbox.tasks.testToolbox(pwd, ...
+                'SourceFolderName', '${{ env.SRC_DIR }}', ...
+                'TestsFolderName', '${{ env.TESTS_DIR }}', ...
+                'ReportSubdirectory', '', ...
+                'CreateBadge', true, ...
+                'CoverageFileList', fileList);
+            end
+
+      - name: Publish test results
+        # This GitHub Action analyses test result files and publishes the results on GitHub
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: Test Results
+          files: ${{ env.REPORTS_DIR }}/**/test-results.xml
+    
+      - name: Save test results artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports
+          path: ${{ env.REPORTS_DIR }}
+
+      - name: Generate coverage summary
+        id: coverage
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: ${{ env.REPORTS_DIR }}/codecoverage.xml
+          badge: true
+          format: markdown
+          output: both
+          thresholds: '50 75'
+          fail_below_min: 'true'
+        continue-on-error: true
+      
+      - name: Save coverage summary artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+            name: code-coverage-summary
+            path: code-coverage-results.md
+
+      - name: Post coverage summary as PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
+
+      - name: Commit SVG badges if updated
+        # "code issues" and "tests" SVG badges
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: ehennestad/matbox-actions/push-badges@v1
+        with:
+          pr-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          pr-repo: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+      
+      - name: Fail if coverage is too low
+        if: steps.coverage.outcome == 'failure'
+        run: exit 1
