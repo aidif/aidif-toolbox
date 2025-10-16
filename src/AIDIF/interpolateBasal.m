@@ -1,12 +1,52 @@
-function [dti, U]=interpolateBasal(datetime, basal_rate)
-%[dti, U]=interpolateBasal(dt,br)
-% dt  - datetime datenum (days since January 0, 0000, i.e. 739707.3045)
-% br  - basal rate (U/hr)
-% dti - datetime datenum interpolated (5 minute intervals, aligned to % midnight)
-% U   - amount delivered in 5 minute interval (U)
+function basalTT = interpolateBasal(tt)
+%   INTERPOLATEBASAL Interpolates basal rates to equally spaced 5 minute insulin deliveries.
+%
+%   basalTT = INTERPOLATEBASAL(tt)
+%
+%   Inputs:
+%     tt         - timetable containing a column 'BasalRate' with basal rate (U/hr)
+%
+%   Outputs:
+%     basalTT - timetable with 5-minute intervals containing:
+%               Time: datetime array (5 minute intervals, aligned to midnight)
+%               InsulinDelivery: amount delivered in 5 minute interval (U)
+arguments (Input)
+    tt timetable {mustHaveBasalRateColumn, mustBeNonempty}
+end
 
-delivery=[0; cumsum(diff(dt).*br(1:end-1),"omitmissing")];
-dti=(ceil(min(dt)*24*60/5):floor(max(dt)*24*60/5))'/(24*60/5);
-deliveryi=interp1(dt,delivery,dti,"linear");
-U=diff(deliveryi)*24;
-U=[U;0];
+arguments (Output)
+    basalTT timetable
+end
+
+% Ensure column vectors
+timestamps = tt.Properties.RowTimes;
+basal_rate = tt.basal_rate;
+
+% Calculate cumulative insulin delivery
+time_diff = diff(timestamps);
+time_diff_hours = hours(time_diff);
+cum_delivery = [0; cumsum(time_diff_hours .* basal_rate(1:end-1), "omitmissing")];
+
+% Calculate 5 minute deliveries from midnight to midnight, continue last basal rate until end
+dti = (roundTimeStamp(min(timestamps),'start'):minutes(5):roundTimeStamp(max(timestamps),'end'))';
+cum_deliveryi = interp1(timestamps, cum_delivery, dti, "linear");
+cum_deliveryi = fillmissing(cum_deliveryi ,"previous");
+deliveryi = diff(cum_deliveryi);
+deliveryi = [deliveryi; 0];
+
+
+% Create output timetable
+basalTT = timetable(dti, deliveryi, 'VariableNames', {'InsulinDelivery'});
+
+end
+
+
+function mustHaveBasalRateColumn(tt)
+    if ~ismember('basal_rate', tt.Properties.VariableNames)
+        error('Input timetable must have a ''basal_rate'' column.');
+    end
+    br = tt.basal_rate;
+    if ~isnumeric(br) || any(~isfinite(br)) || any(br < 0)
+        error('''basal_rate'' must contain finite, nonnegative numeric values.');
+    end
+end
