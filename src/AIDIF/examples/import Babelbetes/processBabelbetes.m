@@ -7,18 +7,12 @@
 % for further analysis.
 
 %% create the import query table for babelbetes hive schema
-rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23/";
+rootFolder = "/Users/jan/git/aidif/out";
 
-queryTable = constructQueryTable(rootFolder);
+hive_table = constructQueryTable(rootFolder);
 
-% assign unique identifier based on subject, apply to all data types
-[~,~,ic] = unique(queryTable(:,["study_name" "patient_id"]),...
-                  "rows","stable");
-queryTable{:,"unique_id"} = ic;
-%% use the query table to specify only the data to import to workspace
-subsetIndex = find(ismember(queryTable.study_name,["DCLP3","DCLP5"]));
+%%
+subset = queryTable(hive_table .study_name == 'DCLP3' & hive_table .patient_id=='111',:);
+pqStore = parquetDatastore(subset.filePaths);
+pqStore.read()
 
-%import data into tables by datatype
-cgmTable = importByDataType(queryTable(subsetIndex,:),'cgm');
-basalTable = importByDataType(queryTable(subsetIndex,:),'basal');
-bolusTable = importByDataType(queryTable(subsetIndex,:),'bolus');

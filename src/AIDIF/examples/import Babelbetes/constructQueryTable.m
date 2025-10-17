@@ -1,16 +1,15 @@
-function [queryTable,datastoreOutput] = constructQueryTable(rootFolder)
-%constructQueryTable creates a table to use for querying datasets with hive
+function [queryTable] = constructQueryTable(rootFolder)
+%CONSTRUCTQUERYTABLE creates a table to use for querying datasets with hive
 %   schema formatting.
+%
+%   QUERYTABLE = CONSTRUCTQUERYTABLE("babelbetes/path")
 %
 %   INPUTS:
 %   rootFolder: the root path of the dataset under hive schema.
 %
 %   OUTPUTS:
-%   queryTable: table which contains the unique path to all data files
-%      in the subfolders of rootFolder, with variables columns for each
-%      subfolder level to query for.
-%   datastoreOutput: the datastore object used for collecting all
-%      subfolder paths.
+%   queryTable: table which maps the parquet file path to the hive schema levels 
+%   patient_id, study_name and data_type.
 %
 %   Example:
 %
@@ -27,28 +26,16 @@ end
 
 arguments (Output)
     queryTable
-    datastoreOutput
 end
 
-datastoreOutput = parquetDatastore(rootFolder,"IncludeSubfolders",true,"OutputType","timetable","PartitionMethod","file","ReadSize","file");
+%get all parquet file paths
+files = dir(fullfile(rootFolder, '**', '*.parquet'));
+fullPaths = fullfile({files.folder}, {files.name})';
 
-queryTable = cell2table(datastoreOutput.Files);
-queryTable.Var1 = string(queryTable.Var1);
-queryTable.Var1 = rowfun(@(x) replace(x,'\','/'),queryTable,"InputVariables","Var1","OutputFormat","uniform");
-queryTable(:,2) = queryTable(:,1);
-queryTable = renamevars(queryTable,"Var2","filePaths");
-
-queryTable.Var1 = rowfun(@(x) replace(x,rootFolder,''),queryTable,"InputVariables","Var1","OutputFormat","uniform");
-queryTable.Var1 = split(queryTable.Var1,'/');
-
-queryLevels = queryTable.Var1(1,:);
-queryLevels = strtok(queryLevels,'=');
-queryLevels{1,end} = 'fileName';
-
-queryTable = splitvars(queryTable,"Var1","NewVariableNames",queryLevels)
-queryTable(:,queryLevels(1:end-1)) = varfun(@(x) extractAfter(x,'='),queryTable,"InputVariables",queryLevels(1:end-1))
-
-queryTable.patient_id = str2double(queryTable.patient_id)
-
-
+%Add columns for study, patient and data type
+tokens = regexp(fullPaths, 'study_name=([^/]+)/data_type=([^/]+)/patient_id=([^/]+)/[^/]+\.parquet$', ...
+    'tokens', 'once');
+tokens = string(vertcat(tokens{:}));
+queryTable = table(tokens(:,1), tokens(:,2), tokens(:,3), fullPaths, ...
+    'VariableNames', {'study_name', 'data_type', 'patient_id', 'full_path'});
 end
