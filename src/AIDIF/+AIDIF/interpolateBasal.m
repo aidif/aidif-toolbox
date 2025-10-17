@@ -11,7 +11,7 @@ function basalTT = interpolateBasal(tt)
 %               Time: datetime array (5 minute intervals, aligned to midnight)
 %               InsulinDelivery: amount delivered in 5 minute interval (U)
 arguments (Input)
-    tt timetable {mustHaveBasalRateColumn, mustBeNonempty}
+    tt timetable {validateBasalTable, mustBeNonempty}
 end
 
 arguments (Output)
@@ -28,7 +28,7 @@ time_diff_hours = hours(time_diff);
 cum_delivery = [0; cumsum(time_diff_hours .* basal_rate(1:end-1), "omitmissing")];
 
 % Calculate 5 minute deliveries from midnight to midnight, continue last basal rate until end
-dti = (roundTimeStamp(min(timestamps),'start'):minutes(5):roundTimeStamp(max(timestamps),'end'))';
+dti = (AIDIF.roundTimeStamp(min(timestamps),'start'):minutes(5):AIDIF.roundTimeStamp(max(timestamps),'end'))';
 cum_deliveryi = interp1(timestamps, cum_delivery, dti, "linear");
 cum_deliveryi = fillmissing(cum_deliveryi ,"previous");
 deliveryi = diff(cum_deliveryi);
@@ -41,12 +41,16 @@ basalTT = timetable(dti, deliveryi, 'VariableNames', {'InsulinDelivery'});
 end
 
 
-function mustHaveBasalRateColumn(tt)
+function validateBasalTable(tt)
     if ~ismember('basal_rate', tt.Properties.VariableNames)
         error('Input timetable must have a ''basal_rate'' column.');
     end
     br = tt.basal_rate;
     if ~isnumeric(br) || any(~isfinite(br)) || any(br < 0)
         error('''basal_rate'' must contain finite, nonnegative numeric values.');
+    end
+    
+    if height(tt) < 2
+        error('Basal Rate timetable must contain at least two samples to be resampled.');
     end
 end
