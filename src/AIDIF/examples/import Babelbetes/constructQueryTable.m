@@ -1,4 +1,4 @@
-function [queryTable,datastoreOutput] = constructQueryTable(rootFolder)
+function [queryTable] = constructQueryTable(rootFolder)
 %CONSTRUCTQUERYTABLE creates a table to use for querying datasets with hive
 %   schema formatting.
 %
@@ -27,28 +27,19 @@ end
 
 arguments (Output)
     queryTable table
-    datastoreOutput matlab.io.datastore.ParquetDatastore
 end
 
-datastoreOutput = parquetDatastore(rootFolder,"IncludeSubfolders",true,"OutputType","timetable","PartitionMethod","file","ReadSize","file");
+queryTable = struct2table(dir(fullfile(rootFolder,"**/*.parquet")));
+queryTable = removevars(queryTable,["bytes" "date" "datenum" "isdir"]);
+queryTable(:,"path") = fullfile(queryTable.folder,queryTable.name);
 
-queryTable = cell2table(datastoreOutput.Files);
-queryTable.Var1 = string(queryTable.Var1);
-queryTable.Var1 = rowfun(@(x) replace(x,'\','/'),queryTable,"InputVariables","Var1","OutputFormat","uniform");
-queryTable(:,2) = queryTable(:,1);
-queryTable = renamevars(queryTable,"Var2","filePaths");
+% deconstruct 'folder' variable into searchable hive schema components
+queryTable.folder = strrep(queryTable.folder,fullfile(rootFolder),'');
+queryTable.folder = split(queryTable.folder,filesep);
+hiveInfo = split(queryTable.folder,"=");
 
-queryTable.Var1 = rowfun(@(x) replace(x,rootFolder,''),queryTable,"InputVariables","Var1","OutputFormat","uniform");
-queryTable.Var1 = split(queryTable.Var1,'/');
-
-queryLevels = queryTable.Var1(1,:);
-queryLevels = strtok(queryLevels,'=');
-queryLevels{1,end} = 'fileName';
-
-queryTable = splitvars(queryTable,"Var1","NewVariableNames",queryLevels)
-queryTable(:,queryLevels(1:end-1)) = varfun(@(x) extractAfter(x,'='),queryTable,"InputVariables",queryLevels(1:end-1))
-
-queryTable.patient_id = str2double(queryTable.patient_id)
-
+%insert hive schema queries into table
+queryTable.folder = hiveInfo(:,:,2);
+queryTable = splitvars(queryTable,"folder","NewVariableNames",hiveInfo(1,:,1));
 
 end

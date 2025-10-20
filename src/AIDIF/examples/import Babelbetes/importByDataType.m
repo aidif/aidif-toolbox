@@ -1,5 +1,5 @@
 function [combinedTable] = importByDataType(filePaths,dataType)
-%IMPORTBABELBETES import babelbetes parquet files into combined tables of
+%IMPORTBYDATATYPE import babelbetes parquet files into combined tables of
 %one datatype(cgm, basal, or bolus)
 %   filePaths - array of filepaths to babelbetes parquet files to read
 %   datatype - datatype specified for the continuous table ('cgm', 'bolus',
@@ -22,7 +22,7 @@ relevantFiles = filePaths(filePaths.data_type == dataType,:);
 f = waitbar(0,['loading ' char(dataType) ' data.']);
 for i = 1:height(relevantFiles)
 
-    tempTable = parquetread(relevantFiles.filePaths(i));
+    tempTable = parquetread(relevantFiles.path{i});
     tempTable{:,"unique_id"} = relevantFiles.unique_id(i);
     
     if i == 1
