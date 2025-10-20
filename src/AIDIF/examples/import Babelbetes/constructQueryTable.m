@@ -1,5 +1,5 @@
 function [queryTable,datastoreOutput] = constructQueryTable(rootFolder)
-%constructQueryTable creates a table to use for querying datasets with hive
+%CONSTRUCTQUERYTABLE creates a table to use for querying datasets with hive
 %   schema formatting.
 %
 %   INPUTS:
@@ -16,18 +16,18 @@ function [queryTable,datastoreOutput] = constructQueryTable(rootFolder)
 %
 %   See also: parquetdatastore
 %
-%   Author: Michael Wheeloc
+%   Author: Michael Wheelock
 %   Date: 2025-10-08
 %   Copyright: AIDIF
 
 
 arguments (Input)
-    rootFolder
+    rootFolder char {mustBeFolder}
 end
 
 arguments (Output)
-    queryTable
-    datastoreOutput
+    queryTable table
+    datastoreOutput matlab.io.datastore.ParquetDatastore
 end
 
 datastoreOutput = parquetDatastore(rootFolder,"IncludeSubfolders",true,"OutputType","timetable","PartitionMethod","file","ReadSize","file");

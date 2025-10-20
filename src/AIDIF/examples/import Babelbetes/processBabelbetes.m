@@ -9,7 +9,7 @@
 %% create the import query table for babelbetes hive schema
 rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23/";
 
-queryTable = constructQueryTable(rootFolder);
+[queryTable,dsClinic] = constructQueryTable(rootFolder);
 
 % assign unique identifier based on subject, apply to all data types
 [~,~,ic] = unique(queryTable(:,["study_name" "patient_id"]),...
