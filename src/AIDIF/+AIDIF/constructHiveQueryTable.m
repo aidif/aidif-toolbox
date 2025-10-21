@@ -1,6 +1,6 @@
-function [queryTable] = constructQueryTable(rootFolder)
-%CONSTRUCTQUERYTABLE creates a table to use for querying datasets with hive
-%   schema formatting.
+function [queryTable] = constructHiveQueryTable(rootFolder)
+%CONSTRUCTQUERYTABLE creates a table for querying datasets with hive-style
+%   partitioning.
 %
 %   INPUTS:
 %   rootFolder: the root path of the dataset under hive schema.
