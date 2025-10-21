@@ -1,44 +1,56 @@
 classdef InterpolateBasalTest <  matlab.unittest.TestCase
 
     methods (Test)
+    
+        function singleValueError(testCase)
+            % Test case for a single value input that should throw an error
+            tt = timetable(datetime('today'), [1], 'VariableNames', {'basal_rate'});
+            testCase.verifyError(@() AIDIF.interpolateBasal(tt), 'AIDIF:InvalidInput');
+        end
+        function zeroRate(testCase)
+            tt = timetable(datetime('today') + minutes([0;15]), [0;100], 'VariableNames', {'basal_rate'});
+            tt_resampled = AIDIF.interpolateBasal(tt);
+            testCase.verifyEqual(height(tt_resampled), 3)
+            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 0)
+        end
 
-        function oneHourConstant(testCase)
-            tt = timetable(datetime('today')+hours([0;1]), [1;0], 'VariableNames', {'basal_rate'});
+        function oneHourFixedPerfectlyAligned(testCase)
+            % 1 U/h from 00:00:00 to 01:00:00
+            tt = timetable(datetime('today') + hours([0;1]), [1;0], 'VariableNames', {'basal_rate'});
+            tt_resampled = AIDIF.interpolateBasal(tt);
+            testCase.verifyEqual(height(tt_resampled), 12)
+            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 1, 'AbsTol',1e-10)
+            testCase.verifyEqual(tt_resampled.InsulinDelivery, repmat(5/60,12,1), 'AbsTol',1e-8)
+            testCase.verifyEqual(tt_resampled.Time(end), datetime('today')+minutes(55))
+        end
+
+        function oneHourFixedImperfectlyAligned(testCase)
+            % 1 U/h from 00:02:00 to 01:02:00
+            tt = timetable(datetime('today') + minutes(2) + hours([0;1]), [1;0], 'VariableNames', {'basal_rate'});
             tt_resampled = AIDIF.interpolateBasal(tt);
             testCase.verifyEqual(height(tt_resampled), 13)
             testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 1, 'AbsTol',1e-10)
-            testCase.verifyEqual(tt_resampled.InsulinDelivery([1,end]), [5/60;0])
+            testCase.verifyEqual(tt_resampled.InsulinDelivery([1,end]), [3/60; 2/60], 'AbsTol',1e-10)
+            testCase.verifyEqual(tt_resampled.Time(end), datetime('today')+minutes(60))
         end
 
-        function uneven(testCase)
-            tt = timetable(datetime('today')+seconds([-150;+150]), [1;0], 'VariableNames', {'basal_rate'});
+        function SquareWaveOnOffOnOff(testCase)
+            %basal rate changes from 1->0->1->0 every hour
+            tt = timetable(datetime('today') + hours([0,1,2,3,4]'), [1,0,1,0,1]', 'VariableNames', {'basal_rate'});
             tt_resampled = AIDIF.interpolateBasal(tt);
-            testCase.verifyEqual(height(tt_resampled), 2)
-            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 5/60, 'AbsTol',1e-10)
-            %testCase.verifyEqual(tt_resampled.InsulinDelivery, [2.5/60,2.5/60], 'AbsTol',1e-10)
+            testCase.verifyEqual(height(tt_resampled), 48)
+            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 2, 'AbsTol',1e-10)
+            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery(13:24)), 0, 'AbsTol',1e-10)
         end
 
-        function perfectlyAlignedValues(testCase)
-            n=12;
-            dt = datetime('today')+minutes((0:5:5*(n-1))');
-            basal_rate = ones(n,1); basal_rate(2:2:end)=0;
-            %basal_rate(end)=1;
-
-            tt = timetable(dt, basal_rate);
-            tt_resampled = AIDIF.interpolateBasal(tt);
-            
-            %stem(tt.Properties.RowTimes,tt.basal_rate); hold on
-            %stem(tt_resampled.Properties.RowTimes,tt.basal_rate,'--','Color','red','DisplayName','resampled')
-            %hold off
-
-            
-            testCase.verifyEqual(tt.Properties.RowTimes, tt_resampled.Properties.RowTimes) % dt already was in 5 minute spacing
-            deliveries_expected = basal_rate*5/60;
-            deliveries_expected(end) = 0; % last rate didn't start delivery yet
-
-            testCase.verifyEqual(tt_resampled.InsulinDelivery, deliveries_expected ,'AbsTol',1e-10)
-            testCase.verifyEqual(sum(deliveries_expected), 0.5, 'AbsTol',1e-10) %6 times
-            
+        function StartStopWithin5Minutes(testCase)
+            %basal rate changes multiple times within 5 minutes
+            tt = timetable(datetime('today') + minutes([1, 12,14,  23,27]'), [0, 1,0, 1,0]', 'VariableNames', {'basal_rate'});
+            tt_resampled = AIDIF.interpolateBasal(tt)
+            testCase.verifyEqual(height(tt_resampled), 6)
+            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 3 * 2/60, 'AbsTol',1e-10)
+            testCase.verifyEqual(tt_resampled.Time(end), datetime('today')+minutes(25))
+            testCase.verifyEqual(tt_resampled.InsulinDelivery, [0,0,2/60,0,2/60,2/60]', 'AbsTol',1e-10)
         end
     end
 end
