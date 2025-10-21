@@ -6,6 +6,12 @@
 % folders collected in the data warehouse. The combined datasets can be used
 % for further analysis.
 
+%   Author: Michael Wheelock
+%   Date: 2025-10-08
+%   Copyright: AIDIF
+
+import AIDIF.constructHiveQueryTable
+
 %% create the import query table for babelbetes hive schema
 rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23/";
 
