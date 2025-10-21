@@ -13,6 +13,41 @@
 import AIDIF.constructHiveQueryTable
 
 %% create the import query table for babelbetes hive schema
-rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23";
-
+%assign root folder for babelbetes data partition in rootFolder variable
+rootFolder = "your/babelbetes/rootpath/here";
 queryTable = constructHiveQueryTable(rootFolder);
+
+%% ingest babelbetes data, by study and subject, for all data types.
+% create subset for example processing
+subset = queryTable(ismember(queryTable.study_name,"DCLP3") & ...
+                    ismember(queryTable.patient_id,string(1:10)),:);
+[~,uniquePatient,occurences] = unique(subset(:,["study_name" "patient_id"]),...
+                                "rows","stable");
+
+for iPatient = 1:numel(uniquePatient)
+
+    relevantPaths = subset(occurences == uniquePatient(iPatient),:)
+    %TODO Any file verification/alignment needed
+    for iFile = 1:height(relevantPaths)
+
+        currentDataType = relevantPaths.data_type(iFile);
+        rawData = parquetread(relevantPaths.path(iFile),"OutputType","timetable");
+
+        switch currentDataType
+            case "cgm"
+                disp("case 1: " + currentDataType + ...
+                    " data resampled for patient " + string(iPatient))
+            case "basal"
+                disp("case 2: " + currentDataType + ...
+                    " data resampled for patient " + string(iPatient))
+            case "bolus"
+                disp("case 3: " + currentDataType + ...
+                    " data resampled for patient " + string(iPatient))
+            otherwise
+                disp(currentDataType + " file not processed.")
+        end
+    end % raw dataset resampled
+
+    % TODO combine cgm, basal, and bolus functions
+
+end % one patient data combined and saved
