@@ -16,8 +16,3 @@ import AIDIF.constructHiveQueryTable
 rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23/";
 
 queryTable = constructHiveQueryTable(rootFolder);
-
-% assign unique identifier based on subject, apply to all data types
-[~,~,ic] = unique(queryTable(:,["study_name" "patient_id"]),...
-                  "rows","stable");
-queryTable{:,"unique_id"} = ic;
