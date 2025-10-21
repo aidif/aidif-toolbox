@@ -13,6 +13,6 @@
 import AIDIF.constructHiveQueryTable
 
 %% create the import query table for babelbetes hive schema
-rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23/";
+rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23";
 
 queryTable = constructHiveQueryTable(rootFolder);
