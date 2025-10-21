@@ -1,10 +1,10 @@
 % PROCESSBABELBETES this script imports the babelbetes subject data streams
-% (cgm, basal, and bolus insulin) and time aligns and interpolates the data
-% to the requirements specified for RST#1
+%   (cgm, basal, and bolus insulin) and time aligns and interpolates the 
+%   data to the requirements specified for RST#1
 %
-% The output of this script returns combined parquet files to the patient
-% folders collected in the data warehouse. The combined datasets can be used
-% for further analysis.
+%   The output of this script returns combined parquet files to the 
+%   patient folders collected in the data warehouse. The combined datasets
+%   can be used for further analysis.
 
 %   Author: Michael Wheelock
 %   Date: 2025-10-08
