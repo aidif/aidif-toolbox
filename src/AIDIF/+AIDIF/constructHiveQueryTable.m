@@ -37,6 +37,7 @@ hiveInfo = split(queryTable.folder,"=");
 queryTable.folder = hiveInfo(:,:,2);
 queryTable = splitvars(queryTable,"folder", "NewVariableNames",hiveInfo(1,:,1));
 queryTable = removevars(queryTable,"name");
+queryTable = convertvars(queryTable,[1:width(queryTable)],'string');
 
 end
     
