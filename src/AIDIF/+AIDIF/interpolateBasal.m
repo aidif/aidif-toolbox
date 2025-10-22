@@ -1,4 +1,4 @@
-function basalTT = interpolateBasal(tt)
+function basalTT = interpolateBasal(tt, maxGapHours)
 %   INTERPOLATEBASAL Interpolates basal rates to regular spaced (5 minute intervals) insulin deliveries.
 %
 %   basalTT = INTERPOLATEBASAL(tt)
@@ -13,6 +13,7 @@ function basalTT = interpolateBasal(tt)
 %               InsulinDelivery: insulin amount (U) delivered each interval (U)
 arguments (Input)
     tt timetable {validateBasalTable, mustBeNonempty}
+    maxGapHours {mustBePositive} = 6
 end
 
 arguments (Output)
@@ -43,6 +44,7 @@ deliveryi = diff(cum_deliveryi);
 
 basalTT = timetable(dti(1:end-1), deliveryi, 'VariableNames', {'InsulinDelivery'});
 end
+
 
 
 function validateBasalTable(tt)
