@@ -1,3 +1,13 @@
+%   Author: Jan Wrede
+%   Date: 2025-10-22
+%   
+%   This file is part of the larger AIDIF-toolbox project and is licensed 
+%       under the MIT license. A copy of the MIT License can be found in 
+%       the project's root directory.
+%
+%   Copyright (c) year, AIDIF
+%   All rights reserved
+
 classdef InterpolateBasalTest <  matlab.unittest.TestCase
     methods
         function outputFormatTest(testCase, tt_resampled)
@@ -15,6 +25,7 @@ classdef InterpolateBasalTest <  matlab.unittest.TestCase
             testCase.verifyTrue(all(mod(tt_resampled.Time.Minute, 5)==0,'all'), 'Times should be aligned to the nearest 5 minutes');
         end
     end
+    
     methods (Test)
         
         function singleValueError(testCase)

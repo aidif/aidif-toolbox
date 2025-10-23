@@ -1,6 +1,14 @@
-classdef FindGapsTest < matlab.unittest.TestCase
-    % TestfindGaps Unit tests for the findGaps function
+%   Author: Jan Wrede
+%   Date: 2025-10-22
+%   
+%   This file is part of the larger AIDIF-toolbox project and is licensed 
+%       under the MIT license. A copy of the MIT License can be found in 
+%       the project's root directory.
+%
+%   Copyright (c) year, AIDIF
+%   All rights reserved
 
+classdef FindGapsTest < matlab.unittest.TestCase
     methods(Test)
         function testNoGaps(testCase)
             % Original timetable with regular events less than maxGapHours

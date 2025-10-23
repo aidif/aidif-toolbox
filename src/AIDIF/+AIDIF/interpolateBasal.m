@@ -11,6 +11,17 @@ function basalTT = interpolateBasal(tt, maxGapHours)
 %     basalTT - timetable with regular spaced (5-minute) insulin deliveries:
 %               Time: datetime array (5 minute intervals, aligned to midnight)
 %               InsulinDelivery: insulin amount (U) delivered each interval (U)
+%
+%   Author: Jan Wrede
+%   Date: 2025-10-22
+%   
+%   This file is part of the larger AIDIF-toolbox project and is licensed 
+%       under the MIT license. A copy of the MIT License can be found in 
+%       the project's root directory.
+%
+%   Copyright (c) year, AIDIF
+%   All rights reserved
+
 arguments (Input)
     tt timetable {validateBasalTable, mustBeNonempty}
     maxGapHours {mustBePositive} = 6
@@ -40,12 +51,9 @@ cum_deliveryi = interp1(timestamps, cum_delivery, dti, "linear",'extrap');
 % this ensures the first partial delivery is extrapolated correctly
 cum_deliveryi(1) = 0;
 deliveryi = diff(cum_deliveryi);
-%deliveryi = [deliveryi; 0];
 
 basalTT = timetable(dti(1:end-1), deliveryi, 'VariableNames', {'InsulinDelivery'});
 end
-
-
 
 function validateBasalTable(tt)
     if ~ismember('basal_rate', tt.Properties.VariableNames)

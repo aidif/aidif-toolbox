@@ -19,6 +19,16 @@ function ttValid = findGaps(tt, ttResampled, maxGapHours)
 %                      continuous data period (no gap exceeds maxGapHours),
 %                      and false otherwise. The start of a gap is marked invalid 
 %                      while the end of a gap is set to valid (unless it is the start of a new gap). 
+%
+%   Author: Jan Wrede
+%   Date: 2025-10-22
+%   
+%   This file is part of the larger AIDIF-toolbox project and is licensed 
+%       under the MIT license. A copy of the MIT License can be found in 
+%       the project's root directory.
+%
+%   Copyright (c) year, AIDIF
+%   All rights reserved
 
 arguments (Input)
     tt timetable {mustBeSortedTimetable}
