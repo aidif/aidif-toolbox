@@ -135,7 +135,6 @@ jobs:
                 'ReportSubdirectory', '', ...
                 'CreateBadge', true, ...
                 'CoverageFileList', fileList);
-            end
 
       - name: Publish test results
         # This GitHub Action analyses test result files and publishes the results on GitHub
