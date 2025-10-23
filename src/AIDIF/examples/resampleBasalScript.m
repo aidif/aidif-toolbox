@@ -42,6 +42,18 @@ basal_rates = timetable(timestamps', basal_rates', 'VariableNames', {'basal_rate
 %TODO: The first resampled value of unaligned values is always NaN. This
 %only shows effect when first basal rate is not zero
 
+%% Gap
+% 0:00 = 1, 1:00 = 0
+% 7:00 = 1, 8:00 =0
+gap = hours(6)
+timestamps = datetime("today")+hours([0,1])
+timestamps = [timestamps, max(timestamps)+gap(1)+hours([0,1])]
+
+basal_rates = [1,0,1,0]
+basal_rates = timetable(timestamps', basal_rates', 'VariableNames', {'basal_rate'});
+%TODO: The first resampled value of unaligned values is always NaN. This
+%only shows effect when first basal rate is not zero
+
 
 %% RESAMPLE
 %resample
@@ -61,7 +73,7 @@ ylim([0,1.2])
 % Expand xlim by 5 minutes left and right
 xlim([min(tt_resampled.Properties.RowTimes) - minutes(10), max(tt_resampled.Properties.RowTimes) + minutes(10)]);
 % make 5 minute grid
-xticks(tt_resampled.Properties.RowTimes);
+%xticks(tt_resampled.Properties.RowTimes);
 grid('on')
 
 % Identify NaN values in the basal rate
