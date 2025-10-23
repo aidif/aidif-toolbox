@@ -27,12 +27,12 @@ queryTable = constructHiveQueryTable(rootFolder);
 % create subset for example processing
 subset = queryTable(ismember(queryTable.study_name,"DCLP3") & ...
                     ismember(queryTable.patient_id,string(1:10)),:);
-[~,uniquePatient,occurences] = unique(subset(:,["study_name" "patient_id"]),...
+[~,uniquePatient,occurrences] = unique(subset(:,["study_name" "patient_id"]),...
                                 "rows","stable");
 
 for iPatient = 1:numel(uniquePatient)
 
-    relevantPaths = subset(occurences == uniquePatient(iPatient),:)
+    relevantPaths = subset(occurrences == uniquePatient(iPatient),:)
     %TODO Any file verification/alignment needed
     for iFile = 1:height(relevantPaths)
 

@@ -2,7 +2,7 @@ function queryTable = constructHiveQueryTable(rootFolder)
 % CONSTRUCTHIVEQUERYTABLE creates a table for querying datasets with
 %   hive-style partitioning.
 %
-%   queryTable = constructHiveQueryTable(rootfolder) returs a table 
+%   queryTable = constructHiveQueryTable(rootfolder) returns a table 
 %       containing the full paths of a hive-style partitioned datastore, 
 %       as well as variables for each partition key and value.
 %
