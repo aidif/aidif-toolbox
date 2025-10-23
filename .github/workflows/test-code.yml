@@ -109,7 +109,6 @@ jobs:
                       filename = strtrim(line);
                       % Skip empty lines and comments
                       if ~isempty(line) && ~startsWith(filename, '#')
-                          % Convert relative path to absolute path
                           exclude(end+1) = filename;
                       end
                       line = fgetl(fid);
@@ -118,24 +117,23 @@ jobs:
               end
             end
             disp("Files to be excluded:")
-            disp(exclude)
-            disp("---")
+            disp(exclude')
             
             % Remove excluded files
             if ~isempty(exclude)
                 files = files(~ismember(string({files.name}), exclude));
             end
-            coverageFileList = string(fullfile({files.folder}, {files.name}))
             disp("Remaining files to be tested:")
-            disp(coverageFileList')
-            disp("---")
+            disp(string({files.name})')
+            filePaths = string(fullfile({files.folder}, {files.name}));
             
+            %run matbox
             matbox.tasks.testToolbox(pwd, ...
                 'SourceFolderName', '${{ env.SRC_DIR }}', ...
                 'TestsFolderName', '${{ env.TESTS_DIR }}', ...
                 'ReportSubdirectory', '', ...
                 'CreateBadge', true, ...
-                'CoverageFileList', coverageFileList);
+                'CoverageFileList', filePaths);
 
       - name: Publish test results
         # This GitHub Action analyses test result files and publishes the results on GitHub
