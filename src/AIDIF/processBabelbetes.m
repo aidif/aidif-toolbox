@@ -8,7 +8,13 @@
 
 %   Author: Michael Wheelock
 %   Date: 2025-10-08
-%   Copyright: AIDIF
+%   
+%   This file is part of the larger AIDIF-toolbox project and is licensed 
+%       under the MIT license. A copy of the MIT License can be found in 
+%       the project's root directory.
+%
+%   Copyright (c) year, AIDIF
+%   All rights reserved
 
 import AIDIF.constructHiveQueryTable
 
@@ -46,8 +52,8 @@ for iPatient = 1:numel(uniquePatient)
             otherwise
                 disp(currentDataType + " file not processed.")
         end
-    end % raw dataset resampled
+    end
 
     % TODO combine cgm, basal, and bolus functions
 
-end % one patient data combined and saved
+end

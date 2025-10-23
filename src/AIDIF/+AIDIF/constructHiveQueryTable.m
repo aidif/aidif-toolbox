@@ -1,6 +1,10 @@
-function [queryTable] = constructHiveQueryTable(rootFolder)
-%CONSTRUCTHIVEQUERYTABLE creates a table for querying datasets with 
+function queryTable = constructHiveQueryTable(rootFolder)
+% CONSTRUCTHIVEQUERYTABLE creates a table for querying datasets with
 %   hive-style partitioning.
+%
+%   queryTable = constructHiveQueryTable(rootfolder) returs a table 
+%       containing the full paths of a hive-style partitioned datastore, 
+%       as well as variables for each partition key and value.
 %
 %   INPUTS:
 %   rootFolder: the root path of the dataset under hive schema.
@@ -8,11 +12,17 @@ function [queryTable] = constructHiveQueryTable(rootFolder)
 %   OUTPUTS:
 %   queryTable: table which contains the unique path to all data files
 %      in the subfolders of rootFolder, with variables columns for each
-%      subfolder level to query for.
+%      partition key and value to query for.
 
 %   Author: Michael Wheelock
 %   Date: 2025-10-08
-%   Copyright: AIDIF
+%   
+%   This file is part of the larger AIDIF-toolbox project and is licensed 
+%       under the MIT license. A copy of the MIT License can be found in 
+%       the project's root directory.
+%
+%   Copyright (c) 2025, AIDIF
+%   All rights reserved
 
 
 arguments (Input)
