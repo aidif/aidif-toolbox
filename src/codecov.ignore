@@ -1,0 +1,4 @@
+# Codecov ignore file - list individual file names
+# One file name per line (just the filename, not paths)
+Contents.m
+gettingStarted.m
