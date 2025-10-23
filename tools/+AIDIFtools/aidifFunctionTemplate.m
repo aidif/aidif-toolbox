@@ -3,7 +3,7 @@ function [outputArg1,outputArg2] = aidifFunctionTemplate(inputArg1,inputArg2,nam
 %   Copy this function when making a new function and fill in. Some style
 %       specifics are to indent after the first line of any description. 
 %       add extra lines only between sections of the code header, and keep
-%       documentaion about author, licensing, and copyright separate from
+%       documentation about author, licensing, and copyright separate from
 %       the header block.
 %
 %   SYNTAX:
