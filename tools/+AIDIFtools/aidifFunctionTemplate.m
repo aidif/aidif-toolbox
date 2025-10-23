@@ -47,6 +47,7 @@ arguments (Input)
     inputArg2 timetable {mustBeNonempty}
     nameValueArgs.name = 'default'
     nameValueArgs.offset = 0
+    nameValueArgs.origin {mustBeMember(nameValueArgs.origin, ["start","end"])} = "start"
 end
 
 arguments (Output)
