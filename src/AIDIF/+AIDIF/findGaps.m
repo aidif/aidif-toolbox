@@ -1,7 +1,7 @@
-function ttValid = nanGaps(tt, ttResampled, maxGapHours)
-% NANGAPS Compute validity flags for resampled timetable based on data gaps
+function ttValid = findGaps(tt, ttResampled, maxGapHours)
+% FINDGAPS Compute validity flags for resampled timetable based on data gaps
 %
-%   ttValid = NANGAPS(tt, ttResampled, maxGapHours) returns a timetable with
+%   ttValid = FINDGAPS(tt, ttResampled, maxGapHours) returns a timetable with
 %   the same row times as ttResampled and a logical column 'Valid' that
 %   indicates whether each resampled row falls within a continuous period
 %   of data in the original timetable tt.

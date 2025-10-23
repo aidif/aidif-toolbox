@@ -1,5 +1,5 @@
-classdef NanGapsTest < matlab.unittest.TestCase
-    % TestNanGaps Unit tests for the nanGaps function
+classdef FindGapsTest < matlab.unittest.TestCase
+    % TestfindGaps Unit tests for the findGaps function
 
     methods(Test)
         function testNoGaps(testCase)
@@ -11,7 +11,7 @@ classdef NanGapsTest < matlab.unittest.TestCase
             resampledTimes = ttTimes(1):minutes(5):ttTimes(end);
             ttResampled = timetable(resampledTimes');
             
-            ttValid = AIDIF.nanGaps(tt, ttResampled, 6);
+            ttValid = AIDIF.findGaps(tt, ttResampled, 6);
             
             % All values should be valid
             testCase.verifyTrue(all(ttValid.Valid));
@@ -29,7 +29,7 @@ classdef NanGapsTest < matlab.unittest.TestCase
             resampledTimes = ttTimes(1):minutes(15):ttTimes(end);
             ttResampled = timetable(resampledTimes');
             
-            ttValid = AIDIF.nanGaps(tt, ttResampled, 6);
+            ttValid = AIDIF.findGaps(tt, ttResampled, 6);
             
             % All resampled rows should be invalid except the last one
             testCase.verifyTrue(all(ttValid.Valid(1:end-1)==false));
@@ -44,7 +44,7 @@ classdef NanGapsTest < matlab.unittest.TestCase
             resampledTimes = ttTimes(1):minutes(5):ttTimes(end);
             ttResampled = timetable(resampledTimes');
             
-            ttValid = AIDIF.nanGaps(tt, ttResampled, 6);
+            ttValid = AIDIF.findGaps(tt, ttResampled, 6);
             
             % Check: first two intervals valid, gap interval invalid, then valid again
             gapStart = find(ttResampled.Time == ttTimes(2)); % after second event
@@ -61,7 +61,7 @@ classdef NanGapsTest < matlab.unittest.TestCase
             resampledTimes = ttTimes(1):minutes(30):ttTimes(end);
             ttResampled = timetable(resampledTimes');
             
-            ttValid = AIDIF.nanGaps(tt, ttResampled, 2);
+            ttValid = AIDIF.findGaps(tt, ttResampled, 2);
             
             % Check that periods between 1-7 and 8-14 hours are invalid
             gap1Start = find(ttResampled.Time > ttTimes(2), 1)-1;
@@ -80,7 +80,7 @@ classdef NanGapsTest < matlab.unittest.TestCase
             resampledTimes = ttTimes(1):minutes(5):ttTimes(end);
             ttResampled = timetable(resampledTimes');
             
-            ttValid = AIDIF.nanGaps(tt, ttResampled, 6);
+            ttValid = AIDIF.findGaps(tt, ttResampled, 6);
             
             testCase.verifyEqual(ttValid.Time, ttResampled.Time);
         end
