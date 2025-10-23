@@ -92,15 +92,44 @@ jobs:
             addpath(genpath('${{ env.SRC_DIR }}'));
             addpath(genpath('${{ env.TOOLS_DIR }}'));
             addpath(genpath('${{ env.TESTS_DIR }}'));
-            if exist("testToolbox", "file")
-              testToolbox('ReportSubdirectory', '', 'CreateBadge', true, 'OutputDetail', 'html');
-            else
-              files = dir(fullfile('${{ env.SRC_DIR }}', '**', '*.m'));
-              fileList = string(fullfile({files.folder}, {files.name}));
-              exclude = ["Contents.m", "gettingStarted.m"];
-              fileList = fileList(~ismember(string({files.name}), exclude));
-              
-              matbox.tasks.testToolbox(pwd, ...
+            files = dir(fullfile('${{ env.SRC_DIR }}', '**', '*.m'));
+            
+            disp("All file candidates for testing:")
+            disp(string(fullfile({files.folder}, {files.name})'))
+            disp("---")
+
+            %load excluded file names
+            ignoreFile = 'codecov.ignore';
+            exclude = string([]);
+            if exist(ignoreFile, 'file')
+              fid = fopen(ignoreFile, 'r');
+              if fid ~= -1
+                  line = fgetl(fid);
+                  while ischar(line)
+                      filename = strtrim(line);
+                      % Skip empty lines and comments
+                      if ~isempty(line) && ~startsWith(filename, '#')
+                          % Convert relative path to absolute path
+                          exclude(end+1) = filename;
+                      end
+                      line = fgetl(fid);
+                  end
+                  fclose(fid);
+              end
+            end
+            disp("Files to be excluded:")
+            disp(exclude)
+            disp("---")
+            
+            % Remove excluded files
+            if ~isempty(exclude)
+                files = files(~ismember(string({files.name}), exclude));
+            end
+            disp("Remaining files to be tested:")
+            disp(string(fullfile({files.folder}, {files.name})'))
+            disp("---")
+
+            matbox.tasks.testToolbox(pwd, ...
                 'SourceFolderName', '${{ env.SRC_DIR }}', ...
                 'TestsFolderName', '${{ env.TESTS_DIR }}', ...
                 'ReportSubdirectory', '', ...
