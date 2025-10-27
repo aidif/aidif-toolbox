@@ -7,11 +7,6 @@ classdef ConstructHiveQueryTableTest < matlab.unittest.TestCase
 
     methods (TestMethodSetup)
 
-        function setupPaths(testCase)
-            addpath("../src/AIDIF/")
-            testCase.addTeardown(@() rmpath("../src/AIDIF/"))
-        end
-
         function createHivePartition(testCase)
             % Shared setup for the entire test class
             testCase.testRoot = fullfile(tempdir, 'HiveTest');
