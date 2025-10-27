@@ -13,14 +13,14 @@
 %       under the MIT license. A copy of the MIT License can be found in 
 %       the project's root directory.
 %
-%   Copyright (c) year, AIDIF
+%   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
 import AIDIF.constructHiveQueryTable
 
 %% create the import query table for babelbetes hive schema
 %assign root folder for babelbetes data partition in rootFolder variable
-rootFolder = "your/babelbetes/rootpath/here";
+rootFolder = "your/babelbetes/output/path/here";
 queryTable = constructHiveQueryTable(rootFolder);
 
 %% ingest babelbetes data, by study and subject, for all data types.
