@@ -1,4 +1,4 @@
-function queryTable = constructHiveQueryTable(rootFolder)
+function queryTable = constructHiveQueryTable(rootPath)
 % CONSTRUCTHIVEQUERYTABLE creates a table for querying datasets with
 %   hive-style partitioning.
 %
@@ -26,7 +26,7 @@ function queryTable = constructHiveQueryTable(rootFolder)
 
 
 arguments (Input)
-    rootFolder char {mustBeTextScalar, mustBeFolder, ...
+    rootPath char {mustBeTextScalar, mustBeFolder, ...
                      mustNotHaveTrailingSeparator}
 end
 
@@ -34,12 +34,12 @@ arguments (Output)
     queryTable table
 end
 
-queryTable = struct2table(dir(fullfile(rootFolder,"**/*.parquet")));
+queryTable = struct2table(dir(fullfile(rootPath,"**/*.parquet")));
 queryTable = removevars(queryTable,["bytes" "date" "datenum" "isdir"]);
 queryTable(:,"path") = fullfile(queryTable.folder,queryTable.name);
 
 % deconstruct 'folder' variable into searchable hive schema components
-queryTable.folder = strrep(queryTable.folder, [fullfile(rootFolder) filesep],'');
+queryTable.folder = strrep(queryTable.folder, [fullfile(rootPath) filesep],'');
 queryTable.folder = split(queryTable.folder,filesep);
 hiveInfo = split(queryTable.folder,"=");
 
@@ -54,7 +54,8 @@ end
 function mustNotHaveTrailingSeparator(path)
     path = char(path);
     if ismember(path(end),["/" "\"])
-        error([path ' must not have a trailing separator, "/" or "\".'])
+        error('AIDIF:InvalidPath:TrailingSeparator',...
+            'rootPath must not end with a file separator.')
     end
 
 end
