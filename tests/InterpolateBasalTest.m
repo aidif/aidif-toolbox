@@ -5,7 +5,7 @@
 %       under the MIT license. A copy of the MIT License can be found in 
 %       the project's root directory.
 %
-%   Copyright (c) year, AIDIF
+%   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
 classdef InterpolateBasalTest <  matlab.unittest.TestCase

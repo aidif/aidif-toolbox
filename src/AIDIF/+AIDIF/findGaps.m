@@ -14,12 +14,10 @@ function ttValid = findGaps(tt, ttResampled, maxGapHours)
 %
 %   Outputs:
 %       ttValid      - timetable with identical row times as ttResampled
-%                      containing a logical column 'Valid'. 'Valid' is true
-%                      if the corresponding resampled row occurs within a
-%                      continuous data period (no gap exceeds maxGapHours),
-%                      and false otherwise. The start of a gap is marked invalid 
-%                      while the end of a gap is set to valid (unless it is the start of a new gap). 
-%
+%          ('valid' - logical column. 'valid' is true if the corresponding resampled row occurs within a continuous 
+%           data period (no gap exceeds maxGapHours), and false otherwise. The start of a gap is 
+%           marked invalid while the end of a gap is set to valid (unless it is the start of a new gap). 
+
 %   Author: Jan Wrede
 %   Date: 2025-10-22
 %   
@@ -27,7 +25,7 @@ function ttValid = findGaps(tt, ttResampled, maxGapHours)
 %       under the MIT license. A copy of the MIT License can be found in 
 %       the project's root directory.
 %
-%   Copyright (c) year, AIDIF
+%   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
 arguments (Input)
@@ -41,8 +39,8 @@ arguments (Output)
 end
 
 tt.TimeDiff = [diff(tt.Time);0];
-tt.Valid = tt.TimeDiff <= hours(maxGapHours);
-ttValid = retime(tt(:,'Valid'), ttResampled.Time, 'previous');
+tt.valid = tt.TimeDiff <= hours(maxGapHours);
+ttValid = retime(tt(:,'valid'), ttResampled.Time, 'previous');
 end
 
 % Custom validation function

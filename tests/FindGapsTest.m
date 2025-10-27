@@ -5,7 +5,7 @@
 %       under the MIT license. A copy of the MIT License can be found in 
 %       the project's root directory.
 %
-%   Copyright (c) year, AIDIF
+%   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
 classdef FindGapsTest < matlab.unittest.TestCase
@@ -22,7 +22,7 @@ classdef FindGapsTest < matlab.unittest.TestCase
             ttValid = AIDIF.findGaps(tt, ttResampled, 6);
             
             % All values should be valid
-            testCase.verifyTrue(all(ttValid.Valid));
+            testCase.verifyTrue(all(ttValid.valid));
             
             % Row times should match resampled timetable
             testCase.verifyEqual(ttValid.Time, ttResampled.Time);
@@ -40,8 +40,8 @@ classdef FindGapsTest < matlab.unittest.TestCase
             ttValid = AIDIF.findGaps(tt, ttResampled, 6);
             
             % All resampled rows should be invalid except the last one
-            testCase.verifyTrue(all(ttValid.Valid(1:end-1)==false));
-            testCase.verifyTrue(ttValid.Valid(end));
+            testCase.verifyTrue(all(ttValid.valid(1:end-1)==false));
+            testCase.verifyTrue(ttValid.valid(end));
         end
 
         function testSingleGap(testCase)
@@ -57,8 +57,8 @@ classdef FindGapsTest < matlab.unittest.TestCase
             % Check: first two intervals valid, gap interval invalid, then valid again
             gapStart = find(ttResampled.Time == ttTimes(2)); % after second event
             gapEnd   = find(ttResampled.Time < ttTimes(3), 1, 'last');
-            testCase.verifyTrue(all(ttValid.Valid(1:gapStart-1))); % before gap
-            testCase.verifyFalse(any(ttValid.Valid(gapStart:gapEnd))); % gap period
+            testCase.verifyTrue(all(ttValid.valid(1:gapStart-1))); % before gap
+            testCase.verifyFalse(any(ttValid.valid(gapStart:gapEnd))); % gap period
         end
 
         function testMultipleGaps(testCase)
@@ -74,11 +74,11 @@ classdef FindGapsTest < matlab.unittest.TestCase
             % Check that periods between 1-7 and 8-14 hours are invalid
             gap1Start = find(ttResampled.Time > ttTimes(2), 1)-1;
             gap1End   = find(ttResampled.Time < ttTimes(3), 1, 'last');
-            testCase.verifyFalse(any(ttValid.Valid(gap1Start:gap1End)));
+            testCase.verifyFalse(any(ttValid.valid(gap1Start:gap1End)));
             
             gap2Start = find(ttResampled.Time > ttTimes(4), 1)-1;
             gap2End   = find(ttResampled.Time < ttTimes(5), 1, 'last');
-            testCase.verifyFalse(any(ttValid.Valid(gap2Start:gap2End)));
+            testCase.verifyFalse(any(ttValid.valid(gap2Start:gap2End)));
         end
 
         function testOutputTimesMatch(testCase)
