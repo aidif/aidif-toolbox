@@ -12,34 +12,21 @@ classdef ConstructHiveQueryTableTest < matlab.unittest.TestCase
             testCase.testRoot = fullfile(tempdir, 'HiveTest');
             mkdir(testCase.testRoot);
 
-            testCase.partitionData = struct(...
-                'StudyName',  {'ABC', 'ABC', 'XYZ'}, ...
-                'DataType',   {'D',   'D',   'E'}, ...
-                'PatientID',  {'101', '102', '201'}, ...
-                'FileName',   {'file1.parquet', 'file2.parquet', 'file3.parquet'}...
-                );
+            % Define test file paths directly
+            filePaths = fullfile(testCase.testRoot, ...
+                ["study_name=ABC/data_type=D/patient_id=101/file1.parquet", ...
+                "study_name=ABC/data_type=D/patient_id=102/file2.parquet", ...
+                "study_name=XYZ/data_type=E/patient_id=201/file3.parquet"]);
 
-            filePaths = {};
-            for i = 1:length(testCase.partitionData)
-                data = testCase.partitionData(i);
-
-                hivePath = fullfile(...
-                    ['study_name=' data.StudyName], ...
-                    ['data_type=' data.DataType], ...
-                    ['patient_id=' data.PatientID] ...
-                    );
-
-                fullDir = fullfile(testCase.testRoot, hivePath);
-                mkdir(fullDir);
-                fullFile = fullfile(fullDir, data.FileName);
-
-                % Create an empty file .parquet file
-                fid = fopen(fullFile, 'w');
+            %create folders and parquet files
+            for i = 1:length(filePaths)
+                [directoryPath, ~, ~] = fileparts(filePaths(i));
+                mkdir(directoryPath)
+                fid = fopen(filePaths(i), 'w');
                 if fid ~= -1
                     fclose(fid);
-                    filePaths{end+1} = fullFile;
                 else
-                    warning('Could not create test file: %s', fullFile);
+                    error('Could not create test file: %s', fullFile);
                 end
             end
 
