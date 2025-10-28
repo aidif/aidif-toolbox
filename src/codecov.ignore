@@ -3,3 +3,5 @@
 Contents.m
 gettingStarted.m
 processBabelbetes.m
+resamplingBasalRates.m
+findingBasalGaps.m
