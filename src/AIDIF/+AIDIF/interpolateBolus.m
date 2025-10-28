@@ -1,4 +1,4 @@
-function bolusTT = interpolateBolus(tt)
+function ttResampled = interpolateBolus(tt)
 %   INTERPOLATEBOLUS Interpolates bolus events to regular spaced (5 minute intervals) insulin deliveries.
 %
 %   bolusTT = INTERPOLATEBOLUS(tt)
@@ -29,11 +29,29 @@ arguments (Input)
 end
 
 arguments (Output)
-    bolusTT timetable
+    ttResampled timetable
 end
 
+%standard boluses
+ttStandard = tt(tt.delivery_duration==0,'bolus');
+ttStandard.Time = AIDIF.roundTimeStamp(ttStandard.Time,'closest');
+ttStandard.Properties.VariableNames{'bolus'} = 'InsulinDelivery';
 
-%bolusTT = 
+%extended boluses are converted to temporary rates
+ttExtended = tt(tt.delivery_duration>0,:);
+ttExtended.rate = ttExtended.bolus./hours(ttExtended.delivery_duration);
+zeroRates = timetable(ttExtended.Properties.RowTimes + ttExtended.delivery_duration, ...
+                      zeros(height(ttExtended),1), 'VariableNames', {'rate'});
+ttExtended = sortrows([ttExtended(:,'rate'); zeroRates]);
+
+%resample using basal logic
+ttExtended.Properties.VariableNames{'rate'} = 'basal_rate';
+ttExtended = AIDIF.interpolateBasal(ttExtended);
+
+%combine 
+newTimes = (AIDIF.roundTimeStamp(tt.Time(1),'start'):minutes(5):AIDIF.roundTimeStamp(tt.Time(end)+tt.delivery_duration(end),'end'))';
+ttCombined = [ttStandard; ttExtended];
+ttResampled = retime(ttCombined,newTimes,"sum");
 end
 
 function validateBolusTable(tt)
@@ -60,7 +78,7 @@ function validateBolusTable(tt)
         error('AIDIF:InvalidInput', 'Timetable must be sorted ascending by time.');
     end
     % Duplicates
-    if any(duplicated(tt.Properties.RowTimes))
-        error('AIDIF:InvalidInput', 'Timetable has duplicated timestamps.');
-    end
+    %if any(duplicated(tt.Properties.RowTimes))
+    %    error('AIDIF:InvalidInput', 'Timetable has duplicated timestamps.');
+    %end
 end
