@@ -29,7 +29,7 @@ function [rounded] = roundTimeStamp(dt, location)
 %   All rights reserved
 arguments (Input)
     dt {mustBeA(dt, 'datetime')}
-    location {mustBeMember(location, ["start", "end"])}
+    location {mustBeMember(location, ["start", "end", 'closest'])}
 end
 
 arguments (Output)
@@ -38,8 +38,10 @@ end
 
 if location == "start"
     roundedMinute = floor((minute(dt)+second(dt)/60)/5)*5;
-else
+elseif location == "end"
     roundedMinute = ceil((minute(dt)+second(dt)/60)/5)*5;
+elseif location == "closest"
+    roundedMinute = round((minute(dt)+second(dt)/60)/5)*5;
 end
-rounded = dateshift(dt, 'start', 'hour') + minutes(roundedMinute);
+rounded = dateshift(dt, "start", "hour") + minutes(roundedMinute);
 end
