@@ -32,7 +32,7 @@ subset = queryTable(ismember(queryTable.study_name,"DCLP3") & ...
 
 for iPatient = 1:numel(uniquePatient)
 
-    relevantPaths = subset(occurrences == uniquePatient(iPatient),:)
+    relevantPaths = subset(occurrences == uniquePatient(iPatient),:);
     %TODO Any file verification/alignment needed
     for iFile = 1:height(relevantPaths)
 
