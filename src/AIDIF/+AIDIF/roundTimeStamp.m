@@ -7,16 +7,17 @@ function [rounded] = roundTimeStamp(dt, location)
 %
 %   Inputs:
 %       dt - A datetime object to be rounded.
-%       location - A string specifying whether to round to the "start" 
-%                  or "end" of the 5-minute interval.
+%       location - A string specifying whether to round to the 
+%                  "start", "end", or the "closest" of the 5-minute interval.
 %
 %   Outputs:
 %       rounded - A datetime object rounded to the nearest 5-minute interval.
 %
 %   Example:
 %       dt = datetime(2023, 10, 1, 12, 3, 0); % 1st October 2023, 12:03:00
-%       rounded_start = roundTimeStamp(dt, "start"); % rounds to 12:00
-%       rounded_end = roundTimeStamp(dt, "end");     % rounds to 12:05
+%       roundTimeStamp(dt, "start");   % rounds to 12:00
+%       roundTimeStamp(dt, "end");     % rounds to 12:05
+%       roundTimeStamp(dt, "closest"); % rounds to 12:05
 
 %   Author: Jan Wrede
 %   Date: 2025-10-22

@@ -25,7 +25,7 @@ function ttResampled = interpolateBolus(tt)
 %   All rights reserved
 
 arguments (Input)
-    tt timetable {validateBolusTable, mustBeNonempty}
+    tt timetable {validateBolusTable, validateExtendedBolusStopTimes}
 end
 
 arguments (Output)
@@ -37,48 +37,55 @@ ttStandard = tt(tt.delivery_duration==0,'bolus');
 ttStandard.Time = AIDIF.roundTimeStamp(ttStandard.Time,'closest');
 ttStandard.Properties.VariableNames{'bolus'} = 'InsulinDelivery';
 
-%extended boluses are converted to temporary rates
-ttExtended = tt(tt.delivery_duration>0,:);
-ttExtended.rate = ttExtended.bolus./hours(ttExtended.delivery_duration);
-zeroRates = timetable(ttExtended.Properties.RowTimes + ttExtended.delivery_duration, ...
-                      zeros(height(ttExtended),1), 'VariableNames', {'rate'});
-ttExtended = sortrows([ttExtended(:,'rate'); zeroRates]);
+%extended boluses are converted to rates and resampled treating them as basal rates
+ttExtended = tt(tt.delivery_duration > 0, :);
+if ~isempty(ttExtended)
+    ttExtended.rate = ttExtended.bolus ./ hours(ttExtended.delivery_duration);
+    zeroRates = timetable(ttExtended.Properties.RowTimes + ttExtended.delivery_duration, ...
+                          zeros(height(ttExtended), 1), 'VariableNames', {'rate'});
+    ttExtended = sortrows([ttExtended(:, 'rate'); zeroRates]);
 
-%resample using basal logic
-ttExtended.Properties.VariableNames{'rate'} = 'basal_rate';
-ttExtended = AIDIF.interpolateBasal(ttExtended);
+    ttExtended.Properties.VariableNames{'rate'} = 'basal_rate';
+    ttExtended = AIDIF.interpolateBasal(ttExtended);
 
-%combine 
-newTimes = (AIDIF.roundTimeStamp(tt.Time(1),'start'):minutes(5):AIDIF.roundTimeStamp(tt.Time(end)+tt.delivery_duration(end),'end'))';
-ttCombined = [ttStandard; ttExtended];
+    ttCombined = [ttStandard; ttExtended];
+else
+    ttCombined = ttStandard;
+end
+newTimes = (AIDIF.roundTimeStamp(min(ttCombined.Time), 'start'):minutes(5):AIDIF.roundTimeStamp(max(ttCombined.Time), 'start'))';
 ttResampled = retime(ttCombined,newTimes,"sum");
 end
 
 function validateBolusTable(tt)
     %columns
     if ~all(ismember(["bolus", "delivery_duration"], tt.Properties.VariableNames))
-        error('AIDIF:InvalidInput', 'Timetable must have a ''bolus'' and ''delivery_duration'' column.');
+        error('AIDIF:InvalidInput:InvalidColumns', 'Timetable must have a ''bolus'' and ''delivery_duration'' column.');
     end
-    %bolus >0
+    %bolus > 0
     bolus = tt.bolus;
     if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus <= 0)
-        error('AIDIF:InvalidInput', '''bolus'' column must contain finite, positive values.');
+        error('AIDIF:InvalidInput:InvalidValue', '''bolus'' column must contain finite, positive values.');
     end
     %duration >= 0
     duration = tt.delivery_duration;
     if ~isduration(duration) || any(duration<0)
-        error('AIDIF:InvalidInput', '''duration'' column must contain positive durations.');
-    end
-    %not empty
-    if height(tt) < 1
-        error('AIDIF:InvalidInput', 'Timetable must contain at least 1 sample to be resampled.');
+        error('AIDIF:InvalidInput:NegativeDurations', '''duration'' column must contain positive durations.');
     end
     %sorted
     if ~issorted(tt.Properties.RowTimes,"ascend")
-        error('AIDIF:InvalidInput', 'Timetable must be sorted ascending by time.');
+        error('AIDIF:InvalidInput:NotSortedAscending', 'Timetable must be sorted ascending by time.');
     end
-    % Duplicates
-    %if any(duplicated(tt.Properties.RowTimes))
-    %    error('AIDIF:InvalidInput', 'Timetable has duplicated timestamps.');
-    %end
+    %duplicated times
+    bDuplicated = AIDIF.duplicated(tt(:,[]));
+    if sum(bDuplicated)>0
+        error('AIDIF:InvalidInput:ContainsDuplicates', "Timetable has %d rows with duplicated datetimes",num2str(sum(bDuplicated)))
+    end
+end
+
+function validateExtendedBolusStopTimes(tt)
+    startEnds = [tt.Properties.RowTimes' ; (tt.Properties.RowTimes + tt.delivery_duration)'];
+    interleavedTimes = startEnds(:);
+    if sum(diff(interleavedTimes,1)<0)
+        error('AIDIF:InvalidInput:BolusesOverlap', "The timetable contains boluses whose deliveries overlap")
+    end
 end
