@@ -56,17 +56,17 @@ end
 
 function validateInputTable(tt)
     if ~ismember('basal_rate', tt.Properties.VariableNames)
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'Input timetable must have a ''basal_rate'' column.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Input timetable must have a ''basal_rate'' column.");
     end
     br = tt.basal_rate;
     if ~isnumeric(br) || any(~isfinite(br)) || any(br < 0)
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, '''basal_rate'' must contain finite, nonnegative numeric values.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "''basal_rate'' must contain finite, nonnegative numeric values.");
     end
     
     if height(tt) < 2
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'Basal Rate timetable must contain at least two samples to be resampled.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Basal Rate timetable must contain at least two samples to be resampled.");
     end
     if ~issorted(tt.Properties.RowTimes,"ascend")
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'Input timetable must be sorted ascending by time.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Input timetable must be sorted ascending by time.");
     end
 end

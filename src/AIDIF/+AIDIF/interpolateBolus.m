@@ -58,24 +58,24 @@ end
 
 function validateBolusTable(tt)
     if ~all(ismember(["bolus", "delivery_duration"], tt.Properties.VariableNames))
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'Timetable must have a ''bolus'' and ''delivery_duration'' column.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Timetable must have a ''bolus'' and ''delivery_duration'' column.");
     end
 
     bolus = tt.bolus;
     if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus <= 0)
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, '''bolus'' column must contain finite, positive values.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "''bolus'' column must contain finite, positive values.");
     end
     
     duration = tt.delivery_duration;
     if ~isduration(duration) || any(duration<0)
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, '''duration'' column must contain positive durations.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "'duration' column must contain positive durations.");
     end
     
     if ~issorted(tt.Properties.RowTimes,"ascend")
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'Timetable must be sorted ascending by time.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Timetable must be sorted ascending by time.");
     end
     
-    bDuplicated = AIDIF.duplicated(tt(:,[]));
+    bDuplicated = AIDIF.findDuplicates(tt(:,[]));
     if sum(bDuplicated)>0
         error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Timetable has %d rows with duplicated datetimes",num2str(sum(bDuplicated)))
     end
