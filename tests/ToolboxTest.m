@@ -1,7 +1,4 @@
 classdef ToolboxTest <  matlab.unittest.TestCase
-% ToolboxTest - Unit test for testing the toolbox functions.
-
-
     methods (Test)
         function testToolboxDir(testCase)
             pathStr = AIDIF.toolboxdir();

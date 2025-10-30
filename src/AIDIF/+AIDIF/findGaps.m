@@ -1,22 +1,22 @@
-function ttValid = findGaps(tt, ttResampled, maxGapHours)
-% FINDGAPS Compute validity flags for resampled timetable based on data gaps
+function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGapHours)
+% FINDGAPS Compute validity flags for resampled datetime array based on data gaps
 %
-%   ttValid = FINDGAPS(tt, ttResampled, maxGapHours) returns a timetable with
-%   the same row times as ttResampled and a logical column 'Valid' that
-%   indicates whether each resampled row falls within a continuous period
-%   of data in the original timetable tt.
+%   validFlags = FINDGAPS(datetimesIrregular, datetimesRegular, maxGapHours) 
+%   returns a logical array with the same length as datetimesRegular that
+%   indicates whether each resampled datetime falls within a continuous period
+%   of data in the original irregular datetime array.
 %
 %   Inputs:
-%       tt           - timetable with original irregularly spaced events
-%       ttResampled  - timetable with regularly spaced row times
-%       maxGapHours  - scalar; maximum allowed gap (in hours) between
-%                      consecutive events in tt before the data is considered missing
+%       datetimesIrregular - datetime array with original irregularly spaced events
+%       datetimesRegular   - datetime array with regularly spaced times
+%       maxGapHours        - scalar; maximum allowed gap (in hours) between
+%                           consecutive events in datetimesIrregular before the data is considered missing
 %
 %   Outputs:
-%       ttValid      - timetable with identical row times as ttResampled
-%          ('valid' - logical column. 'valid' is true if the corresponding resampled row occurs within a continuous 
-%           data period (no gap exceeds maxGapHours), and false otherwise. The start of a gap is 
-%           marked invalid while the end of a gap is set to valid (unless it is the start of a new gap). 
+%       validFlags         - logical array with same length as datetimesRegular
+%          validFlags is true if the corresponding resampled datetime occurs within a continuous 
+%          data period (no gap exceeds maxGapHours), and false otherwise. The start of a gap is 
+%          marked invalid while the end of a gap is set to valid (unless it is the start of a new gap). 
 
 %   Author: Jan Wrede
 %   Date: 2025-10-22
@@ -29,26 +29,30 @@ function ttValid = findGaps(tt, ttResampled, maxGapHours)
 %   All rights reserved
 
 arguments (Input)
-    tt timetable {mustBeSortedTimetable}
-    ttResampled timetable {mustBeSortedTimetable}
-    maxGapHours {mustBePositive} = 6
+    datetimesIrregular datetime {mustBeSortedDatetime}
+    datetimesRegular datetime {mustBeSortedDatetime}
+    maxGapHours {mustBePositive}
 end
 
 arguments (Output)
-    ttValid timetable
+    validFlags logical
 end
 
-tt.TimeDiff = [diff(tt.Time);0];
-tt.valid = tt.TimeDiff <= hours(maxGapHours);
-ttValid = retime(tt(:,'valid'), ttResampled.Time, 'previous');
+timeDiffs = [diff(datetimesIrregular); hours(0)];
+valid = timeDiffs <= hours(maxGapHours);
+
+ttValid = timetable(datetimesIrregular, valid);%;, 'VariableNames', {'valid'});
+ttValidRegular = retime(ttValid, datetimesRegular, 'previous');
+
+validFlags = ttValidRegular.valid;
 end
 
 % Custom validation function
-function mustBeSortedTimetable(tt)
-    if ~istimetable(tt)
-        error('Input must be a timetable.');
+function mustBeSortedDatetime(dt)
+    if ~isdatetime(dt)
+        error('Input must be a datetime array.');
     end
-    if any(diff(tt.Time) < 0)
-        error('Timetable must be sorted by time.');
+    if any(diff(dt) < 0)
+        error('Datetime array must be sorted in ascending order.');
     end
 end
