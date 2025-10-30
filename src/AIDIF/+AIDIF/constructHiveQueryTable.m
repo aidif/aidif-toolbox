@@ -54,8 +54,7 @@ end
 function mustNotHaveTrailingSeparator(path)
 path = char(path);
 if ismember(path(end),["/" "\"])
-    error('AIDIF:InvalidPath:TrailingSeparator',...
-        'rootPath must not end with a file separator.');
+    error(TestHelpers.ERROR_ID_INVALID_ARGUMENT , 'rootPath must not end with a file separator.');
 end
 
 end
@@ -64,7 +63,6 @@ function mustBeConsistentSchema(path)
 table = struct2table(dir(fullfile(path,"**/*.parquet")));
 separatorCount = count(string(table.folder),filesep);
 if ~all(separatorCount == separatorCount(1))
-    error('AIDIF:InvalidPath:InconsistentSchema',...
-        'The file path has an inconsistent hive structure.');
+    error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'The file path has an inconsistent hive structure.');
 end
 end

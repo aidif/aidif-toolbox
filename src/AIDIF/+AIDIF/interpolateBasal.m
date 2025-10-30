@@ -34,7 +34,7 @@ datetimes = tt.Properties.RowTimes;
 basalRate = tt.basal_rate;
 
 % Generate 5 minute regular spaced and datetimes aligned to the hour.
-datetimesResampled = (AIDIF.roundTimeStamp(min(datetimes),'start'):minutes(5):AIDIF.roundTimeStamp(max(datetimes),'end'))';
+datetimesResampled = (AIDIF.roundTo5Minutes(min(datetimes),'start'):minutes(5):AIDIF.roundTo5Minutes(max(datetimes),'end'))';
 
 % If the last basal rate is not aligned with the final sample (e.g., 00:32 vs 00:35),
 % repeat it at the final sample to avoid extrapolating the previous rate
@@ -56,17 +56,17 @@ end
 
 function validateInputTable(tt)
     if ~ismember('basal_rate', tt.Properties.VariableNames)
-        error('AIDIF:InvalidInput', 'Input timetable must have a ''basal_rate'' column.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'Input timetable must have a ''basal_rate'' column.');
     end
     br = tt.basal_rate;
     if ~isnumeric(br) || any(~isfinite(br)) || any(br < 0)
-        error('AIDIF:InvalidInput', '''basal_rate'' must contain finite, nonnegative numeric values.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, '''basal_rate'' must contain finite, nonnegative numeric values.');
     end
     
     if height(tt) < 2
-        error('AIDIF:InvalidInput', 'Basal Rate timetable must contain at least two samples to be resampled.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'Basal Rate timetable must contain at least two samples to be resampled.');
     end
     if ~issorted(tt.Properties.RowTimes,"ascend")
-        error('AIDIF:InvalidInput', 'Input timetable must be sorted ascending by time.');
+        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, 'Input timetable must be sorted ascending by time.');
     end
 end

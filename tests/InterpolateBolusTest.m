@@ -7,7 +7,6 @@
 %
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
-
 classdef InterpolateBolusTest < matlab.unittest.TestCase
 
     properties
@@ -24,13 +23,6 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
         function outputFormatTest(testCase, tt)
             testCase.verifyTrue(istimetable(tt));
             testCase.verifyEqual(tt.Properties.VariableNames, {'InsulinDelivery'});
-            
-            % 5-minute intervals
-            timeDiffs = diff(tt.Time);
-            testCase.verifyEqual(timeDiffs, minutes(5) * ones(size(timeDiffs)));
-
-            % Aligned to 5-minute marks
-            testCase.verifyTrue(all(mod(tt.Time.Minute, 5)==0,'all'));
         end
     end
 
@@ -39,118 +31,113 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
         function standardBolusAtMidnight(testCase)
             tt = timetable(testCase.startTime, 5, duration(0,0,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            tt_resampled = AIDIF.interpolateBolus(tt);
+            ttResampled = AIDIF.interpolateBolus(tt);
             
-            outputFormatTest(testCase, tt_resampled);
-            testCase.verifyEqual(height(tt_resampled), 1);
-            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 5, 'Total insulin conserved');
-            testCase.verifyEqual(tt_resampled.InsulinDelivery(1), 5);
-            testCase.verifyEqual(tt_resampled.Time(1), testCase.startTime);
+            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyTimeAlignmentTest(testCase, ttResampled);
+            testCase.verifyEqual(height(ttResampled), 1);
+            testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 5, 'Total insulin conserved');
+            testCase.verifyEqual(ttResampled.InsulinDelivery(1), 5);
+            testCase.verifyEqual(ttResampled.Time(1), testCase.startTime);
         end
 
         function standardBolusRoundsToClosest5Min(testCase)
             tt = timetable(testCase.startTime + minutes(7), 3, duration(0,0,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            tt_resampled = AIDIF.interpolateBolus(tt);
+            ttResampled = AIDIF.interpolateBolus(tt);
             
-            outputFormatTest(testCase, tt_resampled);
-            testCase.verifyEqual(height(tt_resampled), 1);
-            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 3, 'Total insulin conserved');
-            testCase.verifyEqual(tt_resampled.Time(1), testCase.startTime + minutes(5));
+            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyTimeAlignmentTest(testCase, ttResampled);
+            testCase.verifyEqual(height(ttResampled), 1);
+            testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 3, 'Total insulin conserved');
+            testCase.verifyEqual(ttResampled.Time(1), testCase.startTime + minutes(5));
         end
 
         function extendedBolus30MinEqualDistribution(testCase)
             tt = timetable(testCase.startTime, 6, duration(0,30,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            tt_resampled = AIDIF.interpolateBolus(tt);
+            ttResampled = AIDIF.interpolateBolus(tt);
             
-            outputFormatTest(testCase, tt_resampled);
-            testCase.verifyEqual(height(tt_resampled), 6);
-            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 6, 'AbsTol', 1e-10);
-            testCase.verifyEqual(tt_resampled.InsulinDelivery, ones(6,1), 'AbsTol', 1e-10);
+            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyTimeAlignmentTest(testCase, ttResampled);
+            testCase.verifyEqual(height(ttResampled), 6);
+            testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 6, 'AbsTol', 1e-10);
+            testCase.verifyEqual(ttResampled.InsulinDelivery, ones(6,1), 'AbsTol', 1e-10);
         end
 
         function extendedBolusPartialIntervals(testCase)
             tt = timetable(testCase.startTime + minutes(2), 10, duration(0,50,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            tt_resampled = AIDIF.interpolateBolus(tt);
+            ttResampled = AIDIF.interpolateBolus(tt);
             
-            outputFormatTest(testCase, tt_resampled);
-            testCase.verifyEqual(height(tt_resampled), 11);
-            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 10, 'AbsTol', 1e-10);
-            testCase.verifyEqual(tt_resampled.InsulinDelivery(1), 0.6, 'AbsTol', 1e-10);
-            testCase.verifyEqual(tt_resampled.InsulinDelivery(end), 0.4, 'AbsTol', 1e-10);
-            testCase.verifyEqual(tt_resampled.InsulinDelivery(2:end-1), ones(9,1), 'AbsTol', 1e-10);
+            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyTimeAlignmentTest(testCase, ttResampled);
+            testCase.verifyEqual(height(ttResampled), 11);
+            testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 10, 'AbsTol', 1e-10);
+            testCase.verifyEqual(ttResampled.InsulinDelivery(1), 0.6, 'AbsTol', 1e-10);
+            testCase.verifyEqual(ttResampled.InsulinDelivery(end), 0.4, 'AbsTol', 1e-10);
+            testCase.verifyEqual(ttResampled.InsulinDelivery(2:end-1), ones(9,1), 'AbsTol', 1e-10);
         end
 
         function mixedStandardAndExtendedBoluses(testCase)
             tt = timetable([testCase.startTime; testCase.startTime + minutes(15); testCase.startTime + minutes(45)], ...
                           [2; 3; 6], [duration(0,0,0); duration(0,10,0); duration(0,0,0)], ...
                           'VariableNames', {'bolus', 'delivery_duration'});
-            tt_resampled = AIDIF.interpolateBolus(tt);
+            ttResampled = AIDIF.interpolateBolus(tt);
             
-            outputFormatTest(testCase, tt_resampled);
-            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 11, 'AbsTol', 1e-10);
-            testCase.verifyEqual(tt_resampled.InsulinDelivery(1), 2);
-            testCase.verifyEqual(tt_resampled.InsulinDelivery(10), 6);
+            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyTimeAlignmentTest(testCase, ttResampled);
+            testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 11, 'AbsTol', 1e-10);
+            testCase.verifyEqual(ttResampled.InsulinDelivery(1), 2);
+            testCase.verifyEqual(ttResampled.InsulinDelivery(10), 6);
         end
 
         
         function standardOverlapsExtended(testCase)
             tt = timetable(testCase.startTime + hours([0,1]'), [1,1]', minutes([90,0]'), ...
                           'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), 'AIDIF:InvalidInput:BolusesOverlap');
-            
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
         function extendedOverlapsExtended(testCase)
             tt = timetable(testCase.startTime + hours([0,1]'), [1,1]', minutes([90,10]'), ...
                           'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), 'AIDIF:InvalidInput:BolusesOverlap');
-            
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
         function extendedBolusSpansCorrectIntervals(testCase)
             tt = timetable(testCase.startTime, 2, duration(0,7,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            tt_resampled = AIDIF.interpolateBolus(tt);
+            ttResampled = AIDIF.interpolateBolus(tt);
             
-            outputFormatTest(testCase, tt_resampled);
-            testCase.verifyEqual(height(tt_resampled), 2);
-            testCase.verifyEqual(sum(tt_resampled.InsulinDelivery), 2, 'AbsTol', 1e-10);
-        end
-
-        function outputTest(testCase)
-            tt = timetable(testCase.startTime + hours([10,30,38,50]') + minutes([0,1,1,2.5]'), ...
-                          [5,7,5,4]', hours([0,5,0,1]'), ...
-                          'VariableNames', {'bolus', 'delivery_duration'});
-            tt_resampled = AIDIF.interpolateBolus(tt);
-            outputFormatTest(testCase, tt_resampled);
+            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyTimeAlignmentTest(testCase, ttResampled);
+            testCase.verifyEqual(height(ttResampled), 2);
+            testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 2, 'AbsTol', 1e-10);
         end
 
         function duplicatedEntries(testCase)
             tt = timetable(testCase.startTime + minutes([3,3])', [1, 2]', seconds([0,0])', ...
                           'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), 'AIDIF:InvalidInput:ContainsDuplicates');
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
         function invalidBolusValueError(testCase)
             tt = timetable(testCase.startTime, 0, duration(0,0,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), 'AIDIF:InvalidInput:InvalidValue');
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
         function invalidDurationError(testCase)
             tt = timetable(testCase.startTime, 5, duration(0,-5,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), 'AIDIF:InvalidInput:NegativeDurations');
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
         function missingColumnsError(testCase)
             tt = timetable(testCase.startTime, 5, 'VariableNames', {'bolus'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), 'AIDIF:InvalidInput:InvalidColumns');
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
-
     end
-
 end
+

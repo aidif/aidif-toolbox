@@ -23,50 +23,41 @@ classdef DuplicatedTest < matlab.unittest.TestCase
     methods (Test)
         
         function noDuplicatesReturnsFalse(testCase)
-            % No duplicates should return all false
             tt = timetable([testCase.startTime; testCase.startTime + minutes(5); testCase.startTime + minutes(10)], ...
                           [1; 2; 3], 'VariableNames', {'data'});
-            result = AIDIF.duplicated(tt);
-            
-            testCase.verifyEqual(result, false(3,1));
+            actualResult = AIDIF.duplicated(tt);
+            expectedResult = false(3,1);
+            testCase.verifyEqual(actualResult, expectedResult);
         end
 
         function allDuplicatesReturnTrue(testCase)
-            % All rows with same timestamp should return true
             tt = timetable([testCase.startTime; testCase.startTime; testCase.startTime], ...
                           [1; 1; 1], 'VariableNames', {'data'});
-            result = AIDIF.duplicated(tt);
-            
-            testCase.verifyEqual(result, true(3,1));
+            actualResult = AIDIF.duplicated(tt);
+            expectedResult = true(3,1);
+            testCase.verifyEqual(actualResult, expectedResult);
         end
 
         function mixedDuplicatesCorrectlyIdentified(testCase)
-            % Mixed scenario with some duplicates and some unique
             times = [testCase.startTime; testCase.startTime + minutes(5); testCase.startTime; testCase.startTime + minutes(10)];
             tt = timetable(times, [1; 2; 1; 4], 'VariableNames', {'data'});
-            result = AIDIF.duplicated(tt);
-            
-            expected = [true; false; true; false];
-            testCase.verifyEqual(result, expected);
+            actualResult = AIDIF.duplicated(tt);
+            expectedResult = [true; false; true; false];
+            testCase.verifyEqual(actualResult, expectedResult);
         end
 
         function singleRowReturnsFalse(testCase)
-            % Single row cannot be duplicated
             tt = timetable(testCase.startTime, 5, 'VariableNames', {'data'});
-            result = AIDIF.duplicated(tt);
-            
-            testCase.verifyEqual(result, false);
+            actualResult = AIDIF.duplicated(tt);
+            expectedResult = false;
+            testCase.verifyEqual(actualResult, expectedResult);
         end
 
         function duplicatedRowTimesAreTrue(testCase)
-            % Single row cannot be duplicated
             tt = timetable(testCase.startTime+minutes([1,2,3,2,5,6,1,8]'), [1,2,3,4,5,6,7,8]', 'VariableNames', {'data'});
-            result = AIDIF.duplicated(tt(:,[]));
-            
-            testCase.verifyEqual(result, [true,true,false,true,false,false,true,false]');
+            actualResult = AIDIF.duplicated(tt(:,[]));
+            expectedResult = [true,true,false,true,false,false,true,false]';
+            testCase.verifyEqual(actualResult, expectedResult);
         end
-
-
     end
-
 end

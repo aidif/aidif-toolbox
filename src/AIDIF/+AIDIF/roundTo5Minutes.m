@@ -1,23 +1,23 @@
-function [rounded] = roundTimeStamp(dt, location)
-%ROUNDTIMESTAMP Round a datetime to the nearest 5-minute interval synced to the hour.
+function [rounded] = roundTo5Minutes(dt, location)
+%ROUNDTO5MINUTES Round a datetime to the nearest 5-minute interval synced to the hour.
 %
-%   [ROUNDED] = ROUNDTIMESTAMP(DT, LOCATION) rounds the datetime DT to 
+%   [ROUNDED] = ROUNDTO5MINUTES(DT, LOCATION) rounds the datetime DT to 
 %   the nearest 5-minute interval based on the specified LOCATION.
 %   An interval is a 5-minute timestamp synced on the hour (e.g., :00, :05, :10, etc.).
 %
 %   Inputs:
 %       dt - A datetime object to be rounded.
-%       location - A string specifying whether to round to the 
-%                  "start", "end", or the "closest" of the 5-minute interval.
+%       location - A string ["start", "end", "closest"] specifying whether to round to the 
+%                  "start", "end" of the 5-minute interval or whichever is "closest".
 %
 %   Outputs:
 %       rounded - A datetime object rounded to the nearest 5-minute interval.
 %
 %   Example:
-%       dt = datetime(2023, 10, 1, 12, 3, 0); % 1st October 2023, 12:03:00
-%       roundTimeStamp(dt, "start");   % rounds to 12:00
-%       roundTimeStamp(dt, "end");     % rounds to 12:05
-%       roundTimeStamp(dt, "closest"); % rounds to 12:05
+%       dt = datetime(2023, 10, 1, 12, 3, 0);
+%       roundTo5Minutes(dt, "start");   % rounds to 12:00
+%       roundTo5Minutes(dt, "end");     % rounds to 12:05
+%       roundTo5Minutes(dt, "closest"); % rounds to 12:05
 
 %   Author: Jan Wrede
 %   Date: 2025-10-22
@@ -30,7 +30,7 @@ function [rounded] = roundTimeStamp(dt, location)
 %   All rights reserved
 arguments (Input)
     dt {mustBeA(dt, 'datetime')}
-    location {mustBeMember(location, ["start", "end", 'closest'])}
+    location {mustBeMember(location, ["start", "end", "closest"])}
 end
 
 arguments (Output)
