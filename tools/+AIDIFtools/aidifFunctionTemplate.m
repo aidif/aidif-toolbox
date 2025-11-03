@@ -32,14 +32,14 @@ function [outputArg1,outputArg2] = aidifFunctionTemplate(inputArg1,inputArg2,nam
 %
 %   See also relevantFunction1, relevantFunction2
 
-%   Author: Name
-%   Date: date
+%   Author: <Name>
+%   Date: <date>
 %   
 %   This file is part of the larger AIDIF-toolbox project and is licensed 
 %       under the MIT license. A copy of the MIT License can be found in 
 %       the project's root directory.
 %
-%   Copyright (c) year, AIDIF
+%   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
 arguments (Input)

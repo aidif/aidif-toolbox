@@ -34,7 +34,7 @@ datetimes = tt.Properties.RowTimes;
 basalRate = tt.basal_rate;
 
 % Generate 5 minute regular spaced and datetimes aligned to the hour.
-datetimesResampled = (AIDIF.roundTimeStamp(min(datetimes),'start'):minutes(5):AIDIF.roundTimeStamp(max(datetimes),'end'))';
+datetimesResampled = (AIDIF.roundTo5Minutes(min(datetimes),"start"):minutes(5):AIDIF.roundTo5Minutes(max(datetimes),"end"))';
 
 % If the last basal rate is not aligned with the final sample (e.g., 00:32 vs 00:35),
 % repeat it at the final sample to avoid extrapolating the previous rate
@@ -46,7 +46,7 @@ end
 
 % Calculate cumulative insulin delivery.
 cumulativeDelivery = [0; cumsum(hours(diff(datetimes)) .* basalRate(1:end-1), "omitmissing")];
-cumulativeDeliveryResampled = interp1(datetimes, cumulativeDelivery, datetimesResampled, "linear",'extrap');
+cumulativeDeliveryResampled = interp1(datetimes, cumulativeDelivery, datetimesResampled, "linear", "extrap");
 % Ensure that the first partial delivery is extrapolated correctly.
 cumulativeDeliveryResampled(1) = 0;
 
@@ -56,17 +56,17 @@ end
 
 function validateInputTable(tt)
     if ~ismember('basal_rate', tt.Properties.VariableNames)
-        error('AIDIF:InvalidInput', 'Input timetable must have a ''basal_rate'' column.');
+        error(TestHelpers.ERROR_ID_MISSING_COLUMN, "''tt'' must have a ''basal_rate'' column.");
     end
     br = tt.basal_rate;
     if ~isnumeric(br) || any(~isfinite(br)) || any(br < 0)
-        error('AIDIF:InvalidInput', '''basal_rate'' must contain finite, nonnegative numeric values.');
+        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''basal_rate'' must contain finite, nonnegative numeric values.");
     end
     
     if height(tt) < 2
-        error('AIDIF:InvalidInput', 'Basal Rate timetable must contain at least two samples to be resampled.');
+        error(TestHelpers.ERROR_ID_INSUFFICIENT_DATA, "''tt'' must contain at least two samples to be resampled.");
     end
     if ~issorted(tt.Properties.RowTimes,"ascend")
-        error('AIDIF:InvalidInput', 'Input timetable must be sorted ascending by time.');
+        error(TestHelpers.ERROR_ID_UNSORTED_DATA, "''tt''must be sorted ascending by time.");
     end
 end
