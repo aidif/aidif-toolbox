@@ -10,7 +10,7 @@
 
 classdef InterpolateBasalTest <  matlab.unittest.TestCase
     methods
-        function outputFormatTest(testCase, tt)
+        function TestHelpers.verifyBaseInsulinDeliveryTable(testCase, tt)
             testCase.verifyTrue(istimetable(tt));
             testCase.verifyEqual(tt.Properties.VariableNames, {'InsulinDelivery'});
         end
@@ -18,14 +18,14 @@ classdef InterpolateBasalTest <  matlab.unittest.TestCase
     methods (Test)
         function singleValueError(testCase)
             tt = timetable(datetime('today'), 1, 'VariableNames', {'basal_rate'});
-            testCase.verifyError(@() AIDIF.interpolateBasal(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
+            testCase.verifyError(@() AIDIF.interpolateBasal(tt), TestHelpers.ERROR_ID_INSUFFICIENT_DATA);
         end
 
         function zeroRate(testCase)
             tt = timetable(datetime('today') + minutes([0;15]), [0;100], 'VariableNames', {'basal_rate'});
             ttResampled = AIDIF.interpolateBasal(tt);
             
-            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyBaseInsulinDeliveryTable(testCase, ttResampled);
             TestHelpers.verifyTimeAlignmentTest(testCase,ttResampled)
             
             testCase.verifyEqual(height(ttResampled), 3);
@@ -36,7 +36,7 @@ classdef InterpolateBasalTest <  matlab.unittest.TestCase
             tt = timetable(datetime('today') + hours([0;1]), [1;0], 'VariableNames', {'basal_rate'});
             ttResampled = AIDIF.interpolateBasal(tt);
             
-            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyBaseInsulinDeliveryTable(testCase, ttResampled);
             TestHelpers.verifyTimeAlignmentTest(testCase,ttResampled)
 
             testCase.verifyEqual(height(ttResampled), 12)
@@ -49,7 +49,7 @@ classdef InterpolateBasalTest <  matlab.unittest.TestCase
             tt = timetable(datetime('today') + minutes(2) + hours([0;1]), [1;0], 'VariableNames', {'basal_rate'});
             ttResampled = AIDIF.interpolateBasal(tt);
             
-            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyBaseInsulinDeliveryTable(testCase, ttResampled);
             TestHelpers.verifyTimeAlignmentTest(testCase,ttResampled)
 
             testCase.verifyEqual(height(ttResampled), 13)
@@ -62,7 +62,7 @@ classdef InterpolateBasalTest <  matlab.unittest.TestCase
             tt = timetable(datetime('today') + hours([0,1,2,3,4]'), [1,0,1,0,1]', 'VariableNames', {'basal_rate'});
             ttResampled = AIDIF.interpolateBasal(tt);
             
-            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyBaseInsulinDeliveryTable(testCase, ttResampled);
             TestHelpers.verifyTimeAlignmentTest(testCase,ttResampled)
             
             testCase.verifyEqual(height(ttResampled), 48)
@@ -74,7 +74,7 @@ classdef InterpolateBasalTest <  matlab.unittest.TestCase
             tt = timetable(datetime('today') + minutes([1, 12,14,  23,27]'), [0, 1,0, 1,0]', 'VariableNames', {'basal_rate'});
             ttResampled = AIDIF.interpolateBasal(tt);
             
-            outputFormatTest(testCase, ttResampled);
+            TestHelpers.verifyBaseInsulinDeliveryTable(testCase, ttResampled);
             TestHelpers.verifyTimeAlignmentTest(testCase,ttResampled)
             
             testCase.verifyEqual(height(ttResampled), 6)

@@ -58,26 +58,26 @@ end
 
 function validateBolusTable(tt)
     if ~all(ismember(["bolus", "delivery_duration"], tt.Properties.VariableNames))
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Timetable must have a ''bolus'' and ''delivery_duration'' column.");
+        error(TestHelpers.ERROR_ID_MISSING_COLUMN, "Timetable must have a ''bolus'' and ''delivery_duration'' column.");
     end
 
     bolus = tt.bolus;
     if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus <= 0)
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "''bolus'' column must contain finite, positive values.");
+        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''bolus'' column must contain finite, positive values.");
     end
     
     duration = tt.delivery_duration;
     if ~isduration(duration) || any(duration<0)
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "'duration' column must contain positive durations.");
+        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "'duration' column must contain positive durations.");
     end
     
     if ~issorted(tt.Properties.RowTimes, "ascend")
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Timetable must be sorted ascending by time.");
+        error(TestHelpers.ERROR_ID_UNSORTED_DATA, "Timetable must be sorted ascending by time.");
     end
     
     bDuplicated = AIDIF.findDuplicates(tt(:,[]));
     if sum(bDuplicated)>0
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Timetable has %d rows with duplicated datetimes",num2str(sum(bDuplicated)))
+        error(TestHelpers.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable has %d rows with duplicated datetimes",num2str(sum(bDuplicated)))
     end
 end
 
@@ -85,6 +85,6 @@ function validateExtendedBolusStopTimes(tt)
     startEnds = [tt.Properties.RowTimes' ; (tt.Properties.RowTimes + tt.delivery_duration)'];
     interleavedTimes = startEnds(:);
     if sum(diff(interleavedTimes,1)<0)
-        error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "The timetable contains boluses whose deliveries overlap")
+        error(TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES, "The timetable contains boluses whose deliveries overlap")
     end
 end

@@ -22,7 +22,7 @@ function versionStr = toolboxversion()
     end
 
     if isempty(matchedStr)
-        error('AIDIF:Version:VersionNotFound', ...
+        error(TestHelpers.ERROR_ID_VERSION_NOT_FOUND, ...
             'No version was detected for this AIDIF Matlab Toolbox installation.')
     end
     versionStr = matchedStr{1};

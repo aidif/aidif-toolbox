@@ -62,7 +62,7 @@ classdef ConstructHiveQueryTableTest < matlab.unittest.TestCase
             testRootWithSep = fullfile(testRootWithSep, filesep);
             
             verifyError(testCase,@() AIDIF.constructHiveQueryTable(testRootWithSep), ...
-                TestHelpers.ERROR_ID_INVALID_ARGUMENT);
+                TestHelpers.ERROR_ID_INVALID_PATH_FORMAT);
 
         end
 
@@ -80,7 +80,7 @@ classdef ConstructHiveQueryTableTest < matlab.unittest.TestCase
             end
 
             verifyError(testCase,@() AIDIF.constructHiveQueryTable(testCase.testRoot),...
-                TestHelpers.ERROR_ID_INVALID_ARGUMENT);
+                TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE);
             rmdir(fileparts(shortPath),'s');
 
             % Case: detached path with additional partition level
@@ -95,7 +95,7 @@ classdef ConstructHiveQueryTableTest < matlab.unittest.TestCase
             end
 
             verifyError(testCase,@() AIDIF.constructHiveQueryTable(testCase.testRoot),...
-                TestHelpers.ERROR_ID_INVALID_ARGUMENT);
+                TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE);
             rmdir(fileparts(longPath),'s');
         end
 

@@ -1,5 +1,5 @@
 function [rounded] = roundTo5Minutes(dt, location)
-%ROUNDTO5MINUTES Round a datetime to the nearest 5-minute interval synced to the hour.
+% ROUNDTO5MINUTES Round a datetime to the nearest 5-minute interval synced to the hour.
 %
 %   [ROUNDED] = ROUNDTO5MINUTES(DT, LOCATION) rounds the datetime DT to 
 %   the nearest 5-minute interval based on the specified LOCATION.

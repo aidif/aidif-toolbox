@@ -16,7 +16,7 @@ classdef FindDuplicatesTest < matlab.unittest.TestCase
 
     methods (TestMethodSetup)
         function setupTest(testCase)
-            testCase.startTime = datetime('today');
+            testCase.startTime = datetime("today");
         end
     end
 
