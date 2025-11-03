@@ -1,4 +1,4 @@
-function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGapHours)
+function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGap)
 % FINDGAPS Compute validity flags for resampled datetime array based on data gaps
 %
 %   validFlags = FINDGAPS(datetimesIrregular, datetimesRegular, maxGapHours) 
@@ -9,13 +9,13 @@ function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGapHours
 %   Inputs:
 %       datetimesIrregular - datetime array with original irregularly spaced events
 %       datetimesRegular   - datetime array with regularly spaced times
-%       maxGapHours        - scalar; maximum allowed gap (in hours) between
-%                           consecutive events in datetimesIrregular before the data is considered missing
+%       maxGap             - duration; maximum time between consecutive events in datetimesIrregular 
+%                            before the data is considered missing
 %
 %   Outputs:
 %       validFlags         - logical array with same length as datetimesRegular
-%          validFlags is true if the corresponding resampled datetime occurs within a continuous 
-%          data period (no gap exceeds maxGapHours), and false otherwise. The start of a gap is 
+%          true if the datetimesRegular datetime occurs within a continuous 
+%          data period of datetimesIrregular (gaps < maxGap), and false otherwise. The start of a gap is 
 %          marked invalid while the end of a gap is set to valid (unless it is the start of a new gap). 
 
 %   Author: Jan Wrede
@@ -31,7 +31,7 @@ function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGapHours
 arguments (Input)
     datetimesIrregular datetime {mustBeSortedDatetime}
     datetimesRegular datetime {mustBeSortedDatetime}
-    maxGapHours {mustBePositive}
+    maxGap {duration}
 end
 
 arguments (Output)
@@ -39,9 +39,9 @@ arguments (Output)
 end
 
 timeDiffs = [diff(datetimesIrregular); hours(0)];
-valid = timeDiffs <= hours(maxGapHours);
+valid = timeDiffs <= maxGap;
 
-ttValid = timetable(datetimesIrregular, valid);%;, 'VariableNames', {'valid'});
+ttValid = timetable(datetimesIrregular, valid);
 ttValidRegular = retime(ttValid, datetimesRegular, 'previous');
 
 validFlags = ttValidRegular.valid;

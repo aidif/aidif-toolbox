@@ -93,13 +93,13 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
         end
 
         
-        function standardOverlapsExtended(testCase)
+        function errorWhenStandardOverlapsExtended(testCase)
             tt = timetable(testCase.startTime + hours([0,1]'), [1,1]', minutes([90,0]'), ...
                           'VariableNames', {'bolus', 'delivery_duration'});
             testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
-        function extendedOverlapsExtended(testCase)
+        function errorWhenExtendedOverlapsExtended(testCase)
             tt = timetable(testCase.startTime + hours([0,1]'), [1,1]', minutes([90,10]'), ...
                           'VariableNames', {'bolus', 'delivery_duration'});
             testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
@@ -116,25 +116,25 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
             testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 2, 'AbsTol', 1e-10);
         end
 
-        function duplicatedEntries(testCase)
+        function OnDuplicatedEntries(testCase)
             tt = timetable(testCase.startTime + minutes([3,3])', [1, 2]', seconds([0,0])', ...
                           'VariableNames', {'bolus', 'delivery_duration'});
             testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
-        function invalidBolusValueError(testCase)
+        function errorOnInvalidBolusValue(testCase)
             tt = timetable(testCase.startTime, 0, duration(0,0,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
             testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
-        function invalidDurationError(testCase)
+        function errorOnInvalidDuration(testCase)
             tt = timetable(testCase.startTime, 5, duration(0,-5,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
             testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end
 
-        function missingColumnsError(testCase)
+        function errorOnMissingColumns(testCase)
             tt = timetable(testCase.startTime, 5, 'VariableNames', {'bolus'});
             testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_ARGUMENT);
         end

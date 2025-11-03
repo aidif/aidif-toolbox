@@ -50,13 +50,13 @@ disp(string({files.name})') %[output:43a305fa]
 filePaths = string(fullfile({files.folder}, {files.name}));
 %[text] Run matbox to perform tests
 %run matbox
-matbox.tasks.testToolbox(pwd, ... %[output:group:90084b74] %[output:49f05783] %[output:2c95dddc]
-    'SourceFolderName', src_dir, ... %[output:49f05783] %[output:2c95dddc]
-    'TestsFolderName', test_dir, ... %[output:49f05783] %[output:2c95dddc]
-    'ReportSubdirectory', '', ... %[output:49f05783] %[output:2c95dddc]
-    'CreateBadge', true, ... %[output:49f05783] %[output:2c95dddc]
-    'CoverageFileList', filePaths, ... %[output:49f05783] %[output:2c95dddc]
-    HtmlReports=true); %[output:group:90084b74] %[output:49f05783] %[output:2c95dddc]
+matbox.tasks.testToolbox(pwd, ... %[output:group:90084b74] %[output:03f0168c]
+    'SourceFolderName', src_dir, ... %[output:03f0168c]
+    'TestsFolderName', test_dir, ... %[output:03f0168c]
+    'ReportSubdirectory', '', ... %[output:03f0168c]
+    'CreateBadge', true, ... %[output:03f0168c]
+    'CoverageFileList', filePaths, ... %[output:03f0168c]
+    HtmlReports=true); %[output:group:90084b74] %[output:03f0168c]
 
 %[appendix]{"version":"1.0"}
 %---
@@ -67,23 +67,20 @@ matbox.tasks.testToolbox(pwd, ... %[output:group:90084b74] %[output:49f05783] %[
 %   data: {"dataType":"text","outputData":{"text":"All file candidates for testing:\n","truncated":false}}
 %---
 %[output:597157df]
-%   data: {"dataType":"text","outputData":{"text":"    \"Contents.m\"\n    \"gettingStarted.m\"\n    \"findGaps.m\"\n    \"interpolateBasal.m\"\n    \"roundTimeStamp.m\"\n    \"toolboxdir.m\"\n    \"toolboxversion.m\"\n    \"uniqueValueCounts.m\"\n    \"findingBasalGaps.m\"\n    \"resamplingBasalRates.m\"\n\n","truncated":false}}
+%   data: {"dataType":"text","outputData":{"text":"    \"Contents.m\"\n    \"gettingStarted.m\"\n    \"processBabelbetes.m\"\n    \"constructHiveQueryTable.m\"\n    \"duplicated.m\"\n    \"findGaps.m\"\n    \"interpolateBasal.m\"\n    \"interpolateBolus.m\"\n    \"roundTo5Minutes.m\"\n    \"toolboxdir.m\"\n    \"toolboxversion.m\"\n    \"findingBasalGaps.m\"\n    \"resamplingBasalRates.m\"\n    \"resamplingBoluses.m\"\n\n","truncated":false}}
 %---
 %[output:2c63607c]
 %   data: {"dataType":"text","outputData":{"text":"Files to be excluded:\n","truncated":false}}
 %---
 %[output:099588cc]
-%   data: {"dataType":"text","outputData":{"text":"    \"Contents.m\"\n    \"gettingStarted.m\"\n\n","truncated":false}}
+%   data: {"dataType":"text","outputData":{"text":"    \"Contents.m\"\n    \"gettingStarted.m\"\n    \"processBabelbetes.m\"\n    \"resamplingBasalRates.m\"\n    \"findingBasalGaps.m\"\n    \"resamplingBoluses.m\"\n\n","truncated":false}}
 %---
 %[output:157da9e6]
 %   data: {"dataType":"text","outputData":{"text":"Remaining files to be tested:\n","truncated":false}}
 %---
 %[output:43a305fa]
-%   data: {"dataType":"text","outputData":{"text":"    \"findGaps.m\"\n    \"interpolateBasal.m\"\n    \"roundTimeStamp.m\"\n    \"toolboxdir.m\"\n    \"toolboxversion.m\"\n    \"uniqueValueCounts.m\"\n    \"findingBasalGaps.m\"\n    \"resamplingBasalRates.m\"\n\n","truncated":false}}
+%   data: {"dataType":"text","outputData":{"text":"    \"constructHiveQueryTable.m\"\n    \"duplicated.m\"\n    \"findGaps.m\"\n    \"interpolateBasal.m\"\n    \"interpolateBolus.m\"\n    \"roundTo5Minutes.m\"\n    \"toolboxdir.m\"\n    \"toolboxversion.m\"\n\n","truncated":false}}
 %---
-%[output:49f05783]
-%   data: {"dataType":"text","outputData":{"text":".......... .......\nMATLAB code coverage report has been saved to:\n <a href=\"matlab:web('https:\/\/127.0.0.1:31516\/static\/YlPVxPxW\/report18f34e05-a44c-4d15-ba51-928b350ef107\/codecoverage.html?snc=XCI935&Filterable=true','-noaddressbox','-new')\">\/Users\/jan\/git\/aidif\/aidif-toolbox\/docs\/reports\/codecoverage.html<\/a>\nGenerating test report. Please wait.\n    Preparing content for the test report.\n","truncated":false}}
-%---
-%[output:2c95dddc]
-%   data: {"dataType":"text","outputData":{"text":"    Adding content to the test report.\n    Writing test report to file.\nTest report has been saved to:\n <a href=\"matlab:web('\/Users\/jan\/git\/aidif\/aidif-toolbox\/docs\/reports\/testreport.html','-new')\">\/Users\/jan\/git\/aidif\/aidif-toolbox\/docs\/reports\/testreport.html<\/a>\nSaved badge to \/Users\/jan\/git\/aidif\/aidif-toolbox\/.github\/badges\/tests.svg\nTest result summary:\n   17 Passed, 0 Failed, 0 Incomplete.\n   0.4994 seconds testing time.\n","truncated":false}}
+%[output:03f0168c]
+%   data: {"dataType":"text","outputData":{"text":".......... .......... .......... .........\nMATLAB code coverage report has been saved to:\n <a href=\"matlab:web('https:\/\/127.0.0.1:31517\/static\/lRwR6cfA\/report05f59e52-8f52-4cad-b52a-1da0f2cc895d\/codecoverage.html?snc=ZY73KF&Filterable=true','-noaddressbox','-new')\">\/Users\/jan\/git\/aidif\/aidif-toolbox\/docs\/reports\/codecoverage.html<\/a>\nGenerating test report. Please wait.\n    Preparing content for the test report.\n    Adding content to the test report.\n    Writing test report to file.\nTest report has been saved to:\n <a href=\"matlab:web('\/Users\/jan\/git\/aidif\/aidif-toolbox\/docs\/reports\/testreport.html','-new')\">\/Users\/jan\/git\/aidif\/aidif-toolbox\/docs\/reports\/testreport.html<\/a>\nSaved badge to \/Users\/jan\/git\/aidif\/aidif-toolbox\/.github\/badges\/tests.svg\nTest result summary:\n   39 Passed, 0 Failed, 0 Incomplete.\n   1.2444 seconds testing time.\n","truncated":false}}
 %---

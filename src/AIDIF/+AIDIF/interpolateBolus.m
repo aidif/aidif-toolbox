@@ -21,7 +21,7 @@ function ttResampled = interpolateBolus(tt)
 %       under the MIT license. A copy of the MIT License can be found in 
 %       the project's root directory.
 %
-%   Copyright (c) year, AIDIF
+%   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
 arguments (Input)
@@ -32,8 +32,8 @@ arguments (Output)
     ttResampled timetable
 end
 
-ttStandard = tt(tt.delivery_duration==0,'bolus');
-ttStandard.Time = AIDIF.roundTo5Minutes(ttStandard.Time,'closest');
+ttStandard = tt(tt.delivery_duration==0, "bolus");
+ttStandard.Time = AIDIF.roundTo5Minutes(ttStandard.Time, "closest");
 ttStandard.Properties.VariableNames{'bolus'} = 'InsulinDelivery';
 
 %extended boluses are converted to rates and resampled treating them as basal rates
@@ -43,7 +43,7 @@ if ~isempty(ttExtended)
     zeroRates = timetable(ttExtended.Properties.RowTimes + ttExtended.delivery_duration, ...
                           zeros(height(ttExtended), 1), 'VariableNames', {'rate'});
     
-    ttExtendedAsBasalRate = sortrows([ttExtended(:, 'rate'); zeroRates]);
+    ttExtendedAsBasalRate = sortrows([ttExtended(:, "rate"); zeroRates]);
     ttExtendedAsBasalRate.Properties.VariableNames{'rate'} = 'basal_rate';
 
     ttExtendedResampled = AIDIF.interpolateBasal(ttExtendedAsBasalRate);
@@ -52,7 +52,7 @@ if ~isempty(ttExtended)
 else
     ttCombined = ttStandard;
 end
-newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Time), 'start'):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Time), 'start'))';
+newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Time), "start"):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Time), 'start'))';
 ttResampled = retime(ttCombined,newTimes,"sum");
 end
 
@@ -71,7 +71,7 @@ function validateBolusTable(tt)
         error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "'duration' column must contain positive durations.");
     end
     
-    if ~issorted(tt.Properties.RowTimes,"ascend")
+    if ~issorted(tt.Properties.RowTimes, "ascend")
         error(TestHelpers.ERROR_ID_INVALID_ARGUMENT, "Timetable must be sorted ascending by time.");
     end
     

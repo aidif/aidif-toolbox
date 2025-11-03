@@ -17,8 +17,8 @@ classdef RoundTo5MinutesTest < matlab.unittest.TestCase
             resultStart = AIDIF.roundTo5Minutes(dt, "start");
             resultEnd = AIDIF.roundTo5Minutes(dt, "end");
             resultClosest = AIDIF.roundTo5Minutes(dt, "closest");
-            
             expected = datetime(2023, 10, 23, 14, 25, 0);
+            
             testCase.verifyEqual(resultStart, expected);
             testCase.verifyEqual(resultEnd, expected);
             testCase.verifyEqual(resultClosest, expected);
@@ -36,8 +36,8 @@ classdef RoundTo5MinutesTest < matlab.unittest.TestCase
             testCase.verifyEqual(resultEnd, expectedEnd);
 
             resultClosest = AIDIF.roundTo5Minutes(dt, "closest");
-            expectedEnd = datetime(2023, 10, 23, 15, 0, 0);
-            testCase.verifyEqual(resultClosest, expectedEnd);
+            expectedClosest = datetime(2023, 10, 23, 15, 0, 0);
+            testCase.verifyEqual(resultClosest, expectedClosest);
         end
 
         function testRoundAtZeroMinute(testCase)
@@ -52,8 +52,8 @@ classdef RoundTo5MinutesTest < matlab.unittest.TestCase
             testCase.verifyEqual(resultEnd, expectedEnd);
 
             resultClosest = AIDIF.roundTo5Minutes(dt, "closest");
-            expectedEnd = datetime(2023, 10, 23, 14, 0, 0);
-            testCase.verifyEqual(resultClosest, expectedEnd);
+            expectedClosest = datetime(2023, 10, 23, 14, 0, 0);
+            testCase.verifyEqual(resultClosest, expectedClosest);
         end
 
         function testArrayOfDatetimes(testCase)
@@ -64,13 +64,13 @@ classdef RoundTo5MinutesTest < matlab.unittest.TestCase
             expected = start + minutes([0,0,0,0,0,0]);
             testCase.verifyEqual(result, expected);
 
-            result = AIDIF.roundTo5Minutes(dt, "end");
-            expected = start + minutes([5,5,5,5,5,5]);
-            testCase.verifyEqual(result, expected);
+            resultEnd = AIDIF.roundTo5Minutes(dt, "end");
+            expectedEnd = start + minutes([5,5,5,5,5,5]);
+            testCase.verifyEqual(resultEnd, expectedEnd);
 
-            result = AIDIF.roundTo5Minutes(dt, "closest");
-            expected = start + minutes([0,0,0,5,5,5]);
-            testCase.verifyEqual(result, expected);
+            resultClosest = AIDIF.roundTo5Minutes(dt, "closest");
+            expectedClosest = start + minutes([0,0,0,5,5,5]);
+            testCase.verifyEqual(resultClosest, expectedClosest);
         end
 
         function testBoundaries(testCase)

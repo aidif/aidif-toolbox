@@ -1,16 +1,20 @@
 function isDuplicated = findDuplicates(tt)
-% findDuplicates Identifies duplicated rows in a timetable.
-%   isDuplicated = findDuplicates(myTimetable); Checks for duplicates using all columns
-%   isDuplicated = findDuplicates(myTimetable(:, {'col1', 'col2'})); Check for duplicates only based on specified columns
-%   isDuplicated = findDuplicates(myTimetable(:, [])); Check for duplicates only based on row times (ignoring table data)
+% FINDDUPLICATES Identifies duplicated rows in a timetable.
+%   isDuplicated = findDuplicates(myTimetable);
 %
 %   Inputs:
 %     tt - timetable to check for duplicated rows (using all columns)
 %
 %   Outputs:
 %     isDuplicated - logical array indicating which rows have duplicate values
-%                   (true for all rows that share identical values with other rows)
+%                   (true for all rows that share identical values)
 %
+%   Example 1: Check for duplicates only based on specified columns
+%     isDuplicated = findDuplicates(myTimetable(:, {'col1', 'col2'})); 
+%
+%   Example2: Check for duplicates only based on row times (ignoring table data)
+%     isDuplicated = findDuplicates(myTimetable(:, [])); 
+
 
 %   Author: Jan Wrede
 %   Date: 2025-10-29
