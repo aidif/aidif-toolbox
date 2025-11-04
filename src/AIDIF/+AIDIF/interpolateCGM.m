@@ -1,4 +1,4 @@
-function cgmResampledTimeTable = interpolateCGM(cgmRawTimetable)
+function cgmTT = interpolateCGM(tt)
 % INTERPOLATECGM resample and formats cgm tables on the hour.
 %
 %   SYNTAX:
@@ -39,18 +39,35 @@ function cgmResampledTimeTable = interpolateCGM(cgmRawTimetable)
 %   All rights reserved
 
 arguments (Input)
-    cgmRawTimetable timetable %add sorted, add table size add no duplicates
+    tt timetable {validateInputTable, mustBeNonempty}
 end
 
 arguments (Output)
-    cgmResampledTimeTable timetable
+    cgmTT timetable
 end
 
-import AIDIF.roundTimeStamp AIDIF.findGaps
+import AIDIF.roundTo5Minutes AIDIF.findGaps
 
-newTimes = roundTimeStamp(cgmRawTimetable.datetime(1),"start"):minutes(5):roundTimeStamp(cgmRawTimetable.datetime(end),"end");
-cgmResampledTimeTable = retime(cgmRawTimetable,newTimes,"linear");
-gaps = findGaps(cgmRawTimetable,cgmResampledTimeTable,0.5);
-cgmResampledTimeTable.cgm(~gaps.valid) = NaN;
-cgmResampledTimeTable.cgm = round(cgmResampledTimeTable.cgm);
+newTimes = roundTo5Minutes(tt.Time(1),"start"):minutes(5):roundTo5Minutes(tt.Time(end),"end");
+cgmTT = retime(tt,newTimes,"linear");
+isValid = findGaps(tt.Time,cgmTT.Time,minutes(30));
+cgmTT.cgm(~isValid) = NaN;
+cgmTT.cgm = round(cgmTT.cgm);
+end
+
+function validateInputTable(tt)
+    if ~ismember('cgm', tt.Properties.VariableNames)
+        error(TestHelpers.ERROR_ID_MISSING_COLUMN, "''tt'' must have a ''cgm'' column.");
+    end
+    cgm = tt.cgm;
+    if ~isnumeric(cgm) || any(~isfinite(cgm)) || any(cgm < 0)
+        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''basal_rate'' must contain finite, nonnegative numeric values.");
+    end
+    
+    if height(tt) < 2
+        error(TestHelpers.ERROR_ID_INSUFFICIENT_DATA, "''tt'' must contain at least two samples to be resampled.");
+    end
+    if ~issorted(tt.Properties.RowTimes,"ascend")
+        error(TestHelpers.ERROR_ID_UNSORTED_DATA, "''tt''must be sorted ascending by time.");
+    end
 end
