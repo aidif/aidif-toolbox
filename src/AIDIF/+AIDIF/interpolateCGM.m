@@ -61,7 +61,7 @@ function validateInputTable(tt)
     end
     cgm = tt.cgm;
     if ~isnumeric(cgm) || any(~isfinite(cgm)) || any(cgm < 0)
-        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''basal_rate'' must contain finite, nonnegative numeric values.");
+        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must contain finite, nonnegative numeric values.");
     end
     
     if height(tt) < 2
