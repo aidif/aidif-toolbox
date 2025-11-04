@@ -22,33 +22,73 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
     end
 
     methods (Test)
-        
-        function TestTimeAlignment(testCase)
-            % output table should always extend beyond irregular datetime start and end.
-            expectedResult = timetable(zeros([14 1]) + 100,'RowTimes',datetime("today") + minutes(0:5:65)');
+
+        function firstRowSamplesWithinValidTimes(testCase)
             offHourTT = testCase.cgmTT;
-
-            % end sample should ceiling despite nearest to previous interval
-            offHourTT.Time = offHourTT.Time + minutes(2);
+            % sample 1 should always round the the next interval
+            offHourTT.Time = offHourTT.Time + minutes(1);
             cgmResampled = AIDIF.interpolateCGM(offHourTT);
-            verifyEqual(testCase,cgmResampled,expectedResult);
-
-            % sample 1 should floor despite nearest to next interval
-            offHourTT.Time = offHourTT.Time + minutes(2);
-            cgmResampled = AIDIF.interpolateCGM(offHourTT);
+            expectedResult = timetable(zeros([12 1]) + 100,'RowTimes',datetime("today") + minutes(5:5:60)',...
+                'VariableNames',"cgm");
             verifyEqual(testCase,cgmResampled,expectedResult);
         end
 
-        function TestErrorsOnInputTable(testCase)
+        function lastRowSamplesWithinValidTimes(testCase)
+            offHourTT = testCase.cgmTT;
+            % end sample should always floor to the previous interval
+            offHourTT.Time = offHourTT.Time + minutes(4);
+            cgmResampled = AIDIF.interpolateCGM(offHourTT);
+            expectedResult = timetable(zeros([12 1]) + 100,'RowTimes',datetime("today") + minutes(5:5:60)',...
+                'VariableNames',"cgm");
+            verifyEqual(testCase,cgmResampled,expectedResult);
+        end
+
+        function interpolationWhenAligned(testCase)
+            testTT = testCase.cgmTT;
+            cgmResampled = AIDIF.interpolateCGM(testTT);
+            expectedResult = timetable(zeros([13 1]) + 100,'RowTimes',datetime("today") + minutes(0:5:60)',...
+                'VariableNames',"cgm");
+            verifyEqual(testCase,cgmResampled,expectedResult);
+        end
+
+        function interpolationWhenUnaligned(testCase)
+            testTT = testCase.cgmTT;
+            testTT.Time = testTT.Time + minutes(2.5);
+            testTT.cgm(1:2:end,:) = 0;
+            cgmResampled = AIDIF.interpolateCGM(testTT);
+            expectedResult = timetable(zeros([12 1]) + 50,'RowTimes',datetime("today") + minutes(5:5:60)',...
+                'VariableNames',"cgm");
+            verifyEqual(testCase,cgmResampled,expectedResult);
+        end
+
+        function interpolateGapsLessThan30Minutes(testCase)
+            testTT = testCase.cgmTT;
+            testTT(2:2:end,:) = [];
+            testTT.cgm(1:2:end) = 0;
+            cgmResampled = AIDIF.interpolateCGM(testTT);
+            expectedResult = timetable([repmat([0 50 100 50],[1 3]) 0]','RowTimes',datetime("today") + minutes(0:5:60)',...
+                'VariableNames',"cgm");
+            verifyEqual(testCase,cgmResampled,expectedResult);
+        end
+
+        function noInterpolationFor30MinuteGaps(testCase)
+            testTT = testCase.cgmTT;
+            testTT(3:8,:) = [];
+            cgmResampled = AIDIF.interpolateCGM(testTT);
+            expectedResult = timetable([repmat(100,[1 2]) NaN([1 5]) repmat(100,[1 6])]','RowTimes',datetime("today") + minutes(0:5:60)',...
+                'VariableNames',"cgm");
+            verifyEqual(testCase,cgmResampled,expectedResult);
+        end
+
+        function errorOnMissingCGMVariableName(testCase)
             missedVarName = testCase.cgmTT;
             missedVarName.Properties.VariableNames{'cgm'} = 'glucose';
             verifyError(testCase,@() AIDIF.interpolateCGM(missedVarName),TestHelpers.ERROR_ID_MISSING_COLUMN)
-
-            unsorted = sortrows(testCase.cgmTT,'Time','descend');
-            verifyError(testCase,@() AIDIF.interpolateCGM(unsorted),TestHelpers.ERROR_ID_UNSORTED_DATA)
-            
         end
 
+        function errorOnUnsortedData(testCase)
+            unsorted = sortrows(testCase.cgmTT,'Time','descend');
+            verifyError(testCase,@() AIDIF.interpolateCGM(unsorted),TestHelpers.ERROR_ID_UNSORTED_DATA)
+        end
     end
-
 end
