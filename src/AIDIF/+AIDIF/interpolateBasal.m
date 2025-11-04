@@ -1,15 +1,14 @@
 function basalTT = interpolateBasal(tt)
-%   INTERPOLATEBASAL Interpolates basal rates to regular spaced (5 minute intervals) insulin deliveries.
+%   INTERPOLATEBASAL Converts basal rates to regular spaced (5 minute intervals) insulin deliveries.
 %
 %   basalTT = INTERPOLATEBASAL(tt)
 %
 %   Inputs:
-%     tt - timetable of irregular spaced basal rate events
+%     tt - timetable of irregular spaced basal rate events:
 %        (`basal_rate` column holding basal rate in U/hr)
 %
 %   Outputs:
-%     basalTT - timetable with regular spaced (5-minute) insulin deliveries:
-%        (`Time`: datetime array (5 minute intervals, aligned to midnight)
+%     basalTT - timetable with regular spaced (5 minute intervals, aligned to the hour) insulin deliveries:
 %        (`InsulinDelivery`: insulin delivered each interval (Units of Insulin))
 
 %   Author: Jan Wrede
