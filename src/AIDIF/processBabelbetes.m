@@ -22,23 +22,25 @@ import AIDIF.constructHiveQueryTable
 %assign root folder for babelbetes data partition in rootFolder variable
 rootFolder = "/Users/jan/git/aidif/out";
 queryTable = constructHiveQueryTable(rootFolder);
+fprintf("There are %d rows",height(queryTable))
 
 %TODO: Eclude Loop for now
-queryTable = queryTable(queryTable.study_name ~= "Loop",:);
+%queryTable = queryTable(queryTable.study_name ~= "Loop",:);
 
 %% ingest babelbetes data, by study and subject, for all data types.
 
 
 %select a random of 6 patients
-nPatients = 25;
+
 uniquePatients = unique(queryTable(:,["study_name","patient_id"]));
+fprintf("There are %d unique patients",height(uniquePatients));
+nPatients = 200;
 randomIndexes = randi([1,height(uniquePatients)],nPatients,1);
-randomPatients = uniquePatients(randomIndexes,:);
+%randomPatients = uniquePatients(randomIndexes,:);
+randomPatients = uniquePatients;
 
-
-randomPatients
-errorLog = {}
 %%
+errorLog = {};
 for iRandomPatient = 1:height(randomPatients)
     rowMask = ismember(queryTable(:, {'study_name','patient_id'}), randomPatients(iRandomPatient,:));
     rows = queryTable(rowMask,:);
@@ -69,18 +71,20 @@ for iRandomPatient = 1:height(randomPatients)
                 string(randomPatients.study_name(iRandomPatient)), ...
                 exception.message);
 
-        
         % Append error details to a structure array
-        errorLog(iRandomPatient).study_name = string(randomPatients.study_name(iRandomPatient));
-        errorLog(iRandomPatient).patient_id = string(randomPatients.patient_id(iRandomPatient));
-        errorLog(iRandomPatient).data_type = 'basal';
-        errorLog(iRandomPatient).error_message = exception.message;
+        s=struct("study_name", string(randomPatients.study_name(iRandomPatient)),...
+        "patient_id", string(randomPatients.patient_id(iRandomPatient)),...
+        "data_type", "basal",...
+        "error_message", exception.message);
+        errorLog{end+1} = s;
         continue
     end
-    
-    basalResampled
-    
-    
-    % TODO combine cgm, basal, and bolus functions
 
+     s=struct("study_name", string(randomPatients.study_name(iRandomPatient)),...
+        "patient_id", string(randomPatients.patient_id(iRandomPatient)),...
+        "data_type", "basal",...
+        "error_message", "Success");
+     errorLog{end+1} = s;
 end
+
+errorLogTable = struct2table([errorLog{:}]);
