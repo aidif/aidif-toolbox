@@ -54,9 +54,27 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
         function interpolationWhenUnaligned(testCase)
             testTT = testCase.cgmTT;
             testTT.Time = testTT.Time + minutes(2.5);
-            testTT.cgm(1:2:end,:) = 0;
+            testTT.cgm(1:2:end,:) = 40;
             cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(zeros([12 1]) + 50,'RowTimes',datetime("today") + minutes(5:5:60)',...
+            expectedResult = timetable(zeros([12 1]) + 70,'RowTimes', datetime("today") + minutes(5:5:60)',...
+                'VariableNames',"cgm");
+            verifyEqual(testCase,cgmResampled,expectedResult);
+        end
+
+        function cgmMeasuresAreLimitedAt400(testCase)
+            testTT = testCase.cgmTT;
+            testTT.cgm = linspace(400.1,600,13)';
+            cgmResampled = AIDIF.interpolateCGM(testTT);
+            expectedResult = timetable(repmat(400,[13 1]),'RowTimes', datetime("today") + minutes(0:5:60)',...
+                'VariableNames',"cgm");
+            verifyEqual(testCase,cgmResampled,expectedResult);
+        end
+
+        function cgmMeasuresAreLimitedAt40(testCase)
+            testTT = testCase.cgmTT;
+            testTT.cgm = linspace(39.9,0,13)';
+            cgmResampled = AIDIF.interpolateCGM(testTT);
+            expectedResult = timetable(repmat(40,[13 1]),'RowTimes', datetime("today") + minutes(0:5:60)',...
                 'VariableNames',"cgm");
             verifyEqual(testCase,cgmResampled,expectedResult);
         end
@@ -64,9 +82,9 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
         function interpolateGapsLessThan30Minutes(testCase)
             testTT = testCase.cgmTT;
             testTT(2:2:end,:) = [];
-            testTT.cgm(1:2:end) = 0;
+            testTT.cgm(1:2:end) = 40;
             cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable([repmat([0 50 100 50],[1 3]) 0]','RowTimes',datetime("today") + minutes(0:5:60)',...
+            expectedResult = timetable([repmat([40 70 100 70],[1 3]) 40]','RowTimes',datetime("today") + minutes(0:5:60)',...
                 'VariableNames',"cgm");
             verifyEqual(testCase,cgmResampled,expectedResult);
         end
@@ -75,7 +93,7 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
             testTT = testCase.cgmTT;
             testTT(3:8,:) = [];
             cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable([repmat(100,[1 2]) NaN([1 6]) repmat(100,[1 5])]','RowTimes',datetime("today") + minutes(0:5:60)',...
+            expectedResult = timetable([100 NaN([1 7]) repmat(100,[1 5])]','RowTimes',datetime("today") + minutes(0:5:60)',...
                 'VariableNames',"cgm");
             verifyEqual(testCase,cgmResampled,expectedResult);
         end

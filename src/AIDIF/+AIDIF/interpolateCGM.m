@@ -19,7 +19,7 @@ function cgmTT = interpolateCGM(tt)
 %           spaced by 5 minutes and aligned to the hour.
 %       cgm - cgm glucose values(mg/dL) which are linearly interpolated to the resampled
 %           time series. if tt contains gaps spanning more than 30 minutes, the interpolated values in 
-%           cgmTT are set to NaN. 
+%           cgmTT are set to NaN. Glucose values are limited to a range of 40-400 mg/dL.
 
 %   Author: Michael Wheelock
 %   Date: 2025-11-03
@@ -42,6 +42,8 @@ end
 import AIDIF.roundTo5Minutes AIDIF.findGaps
 
 newTimes = roundTo5Minutes(tt.Time(1),"end"):minutes(5):roundTo5Minutes(tt.Time(end),"start");
+tt{tt.cgm < 40,'cgm'} = 40;
+tt{tt.cgm > 400,'cgm'} = 400;
 cgmTT = retime(tt,newTimes,"linear");
 isValid = findGaps(tt.Time,cgmTT.Time,minutes(30));
 cgmTT.cgm(~isValid) = NaN;
