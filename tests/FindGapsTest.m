@@ -31,49 +31,51 @@ classdef FindGapsTest < matlab.unittest.TestCase
             datetimesIrregular = start + minutes([100,105]');
             datetimesRegular = start + minutes([0,99, 100,102,105,110, 111]');
             validFlags = AIDIF.findGaps(datetimesIrregular, datetimesRegular, minutes(5));
-            testCase.verifyEqual(validFlags, [false,false, true,true,true, false, false]');
+            testCase.verifyEqual(validFlags, [false,false, true,true, false, false, false]');
         end
 
         function testNoGaps(testCase)
             datetimesIrregular = datetime("today") + hours(0:1:3);
-            datetimesRegular = datetimesIrregular(1):minutes(5):datetimesIrregular(end);
-            validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(6));
-            testCase.verifyTrue(all(validFlags));
-            testCase.verifyEqual(length(validFlags), length(datetimesRegular));
+            datetimesRegular = datetimesIrregular(1):minutes(30):datetimesIrregular(end);
+            validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(2));
+            testCase.verifyTrue(all(validFlags(1:end-1)));
+            testCase.verifyFalse(validFlags(end));
+            %testCase.verifyEqual(length(validFlags), length(datetimesRegular));
+        end
+
+        function testAllGapsPerfectAligned(testCase)
+            datetimesIrregular = datetime("today") + hours([0, 2, 4]);
+            datetimesRegular = datetimesIrregular(1):minutes(30):datetimesIrregular(end);
+            validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(1));
+            testCase.verifyEqual(validFlags, [true, false, false, false, true, false, false, false, true]');
         end
 
         function testAllGaps(testCase)
             datetimesIrregular = datetime("today") + hours([0, 2, 4]);
-            datetimesRegular = datetimesIrregular(1):minutes(15):datetimesIrregular(end);
+            datetimesRegular   = datetimesIrregular(1)+seconds(1):minutes(30):datetimesIrregular(end);
             validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(1));
-            testCase.verifyTrue(all(validFlags(1:end-1)==false));
-            testCase.verifyTrue(validFlags(end));
+            testCase.verifyTrue(all(validFlags==false));
         end
 
-        function testSingleGap(testCase)
-            datetimesIrregular = datetime("today") + hours([0, 1, 8, 9]); 
-            datetimesRegular = datetimesIrregular(1):minutes(5):datetimesIrregular(end);
-            validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(6));
-            gapStart = find(datetimesRegular == datetimesIrregular(2)); 
-            gapEnd   = find(datetimesRegular < datetimesIrregular(3), 1, 'last');
-            testCase.verifyTrue(all(validFlags(1:gapStart-1))); 
-            testCase.verifyFalse(any(validFlags(gapStart:gapEnd)));
+        function testSimpleGap(testCase)
+            datetimesIrregular = datetime("today") + hours([0, 1, 2, 4, 5]); 
+            datetimesRegular = datetimesIrregular(1):hours(1):datetimesIrregular(end);
+            validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(1));
+            testCase.verifyEqual(validFlags,[true,true,true,false,true,true]'); 
         end
-
+    
         function testMultipleGaps(testCase)
-            datetimesIrregular = datetime("today") + hours([0,1,4,5,8]);
+            datetimesIrregular = datetime("today") + hours([0,1, 3,4, 6,7]);
             datetimesRegular = datetimesIrregular(1):minutes(30):datetimesIrregular(end);
             
-            validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(2));
+            validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(1));
             
-            % Check that periods between 1-4 and 5-8 hours are invalid
-            gap1Start = find(datetimesRegular > datetimesIrregular(2), 1)-1;
-            gap1End   = find(datetimesRegular < datetimesIrregular(3), 1, 'last');
-            testCase.verifyFalse(any(validFlags(gap1Start:gap1End)));
-            
-            gap2Start = find(datetimesRegular > datetimesIrregular(4), 1)-1;
-            gap2End   = find(datetimesRegular < datetimesIrregular(5), 1, 'last');
-            testCase.verifyFalse(any(validFlags(gap2Start:gap2End)));
+            testCase.verifyEqual(validFlags,[true,true,true, ... %0-1:00
+                                             false,false,false, ... %1:30-2:30
+                                             true,true,true ...%3-4:00
+                                             false,false,false, ... %4:30-5:30
+                                             true, true, true ]'); %6-7:00
+
         end
 
         function testOutputLengthMatch(testCase)

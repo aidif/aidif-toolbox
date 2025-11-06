@@ -43,9 +43,17 @@ valid = timeDiffs <= maxGap;
 ttValid = timetable(datetimesIrregular, valid);
 
 %ensure everything after last sample will be marked invalid
-ttValid(ttValid.Properties.RowTimes(end) + seconds(1e-9), :) = {false};
+%ttValid(ttValid.Properties.RowTimes(end) + seconds(1e-9), :) = {false};
+ttValid(ttValid.Properties.RowTimes(end), :) = {false};
 
 ttValidRegular = retime(ttValid, datetimesRegular, 'previous');
+
+% Check if datetimesIrregular exists in ttValidRegular before setting valid = true
+mask = ismember(datetimesIrregular, ttValidRegular.Properties.RowTimes);
+if any(mask)
+    ttValidRegular(datetimesIrregular(mask), 'valid') = {true};
+end
+
 validFlags = ttValidRegular.valid;
 end
 
