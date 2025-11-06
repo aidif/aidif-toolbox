@@ -4,7 +4,7 @@ function cgmTT = interpolateCGM(tt)
 %
 %   SYNTAX:
 %   cgmTT = interpolateCGM(tt) converts an irregular cgm timetable to a regular timetable that is sampled at 5 minutes 
-%       intervals and synchonized on the hour.
+%       intervals and aligned on the hour.
 %
 %   INPUTS:
 %   tt - timetable containing the following variables:
@@ -14,12 +14,9 @@ function cgmTT = interpolateCGM(tt)
 %           values must be numerical.
 %
 %   OUTPUTS: 
-%   cgmTT - resampled timetable with the following variables:
-%       Time - datetime values of the timetable which are regularly
-%           spaced by 5 minutes and aligned to the hour.
-%       cgm - cgm glucose values(mg/dL) which are linearly interpolated to the resampled
-%           time series. if tt contains gaps spanning more than 30 minutes, the interpolated values in 
-%           cgmTT are set to NaN. Glucose values are limited to a range of 40-400 mg/dL.
+%   cgmTT - timetable with regular spaced (5 minute intervals, aligned to the hour) cgm measurements:
+%       cgm - cgm glucose values(mg/dL) which are linearly interpolated. if tt contains gaps spanning more than 
+%           30 minutes, the interpolated values in cgmTT are set to NaN.
 
 %   Author: Michael Wheelock
 %   Date: 2025-11-03
@@ -41,9 +38,9 @@ end
 
 import AIDIF.roundTo5Minutes AIDIF.findGaps
 
-newTimes = roundTo5Minutes(tt.Time(1),"end"):minutes(5):roundTo5Minutes(tt.Time(end),"start");
+newTimes = roundTo5Minutes(tt.Properties.RowTimes(1),"end"):minutes(5):roundTo5Minutes(tt.Properties.RowTimes(end),"start");
 cgmTT = retime(tt,newTimes,"linear");
-isValid = findGaps(tt.Time,cgmTT.Time,minutes(30));
+isValid = findGaps(tt.Properties.RowTimes,cgmTT.Properties.RowTimes,minutes(30));
 cgmTT.cgm(~isValid) = NaN;
 end
 
