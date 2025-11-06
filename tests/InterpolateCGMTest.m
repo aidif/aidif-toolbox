@@ -61,24 +61,6 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
             verifyEqual(testCase,cgmResampled,expectedResult);
         end
 
-        function cgmMeasuresAreLimitedAt400(testCase)
-            testTT = testCase.cgmTT;
-            testTT.cgm = linspace(400.1,600,13)';
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(repmat(400,[13 1]),'RowTimes', datetime("today") + minutes(0:5:60)',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled,expectedResult);
-        end
-
-        function cgmMeasuresAreLimitedAt40(testCase)
-            testTT = testCase.cgmTT;
-            testTT.cgm = linspace(39.9,0,13)';
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(repmat(40,[13 1]),'RowTimes', datetime("today") + minutes(0:5:60)',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled,expectedResult);
-        end
-
         function interpolateGapsLessThan30Minutes(testCase)
             testTT = testCase.cgmTT;
             testTT(2:2:end,:) = [];
@@ -107,6 +89,20 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
         function errorOnUnsortedData(testCase)
             unsorted = sortrows(testCase.cgmTT,'Time','descend');
             verifyError(testCase,@() AIDIF.interpolateCGM(unsorted),TestHelpers.ERROR_ID_UNSORTED_DATA)
+        end
+
+        function warningForAnyMeasuresOver400(testCase)
+            testTT = testCase.cgmTT;
+            testTT.cgm(1) = 400.1;
+            cgmResampled = AIDIF.interpolateCGM(testTT);
+            verifyWarning(testCase,@() AIDIF.interpolateCGM(cgmResampled),TestHelpers.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+
+        function warningForAnyMeasuresUnder40(testCase)
+            testTT = testCase.cgmTT;
+            testTT.cgm(1) = 39.9;
+            cgmResampled = AIDIF.interpolateCGM(testTT);
+            verifyWarning(testCase,@() AIDIF.interpolateCGM(cgmResampled),TestHelpers.ERROR_ID_INVALID_VALUE_RANGE)
         end
     end
 end

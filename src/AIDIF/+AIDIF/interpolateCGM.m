@@ -42,8 +42,6 @@ end
 import AIDIF.roundTo5Minutes AIDIF.findGaps
 
 newTimes = roundTo5Minutes(tt.Time(1),"end"):minutes(5):roundTo5Minutes(tt.Time(end),"start");
-tt{tt.cgm < 40,'cgm'} = 40;
-tt{tt.cgm > 400,'cgm'} = 400;
 cgmTT = retime(tt,newTimes,"linear");
 isValid = findGaps(tt.Time,cgmTT.Time,minutes(30));
 cgmTT.cgm(~isValid) = NaN;
@@ -66,11 +64,19 @@ function validateInputTable(tt)
         error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be nonnegative.");
     end
 
+    if any(cgm < 40)
+        warning(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "'cgm' contains values less than 40 mg/dL.")
+    end
+
+    if any(cgm > 400)
+        warning(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "'cgm' contains values greater than 400 mg/dL.")
+    end
+
     if height(tt) < 2
         error(TestHelpers.ERROR_ID_INSUFFICIENT_DATA, "''tt'' must contain at least two samples to be resampled.");
     end
     
     if ~issorted(tt.Properties.RowTimes,"ascend")
-        error(TestHelpers.ERROR_ID_UNSORTED_DATA, "''tt''must be sorted ascending by time.");
+        error(TestHelpers.ERROR_ID_UNSORTED_DATA, "''tt' 'must be sorted ascending by time.");
     end
 end
