@@ -1,5 +1,6 @@
 function cgmTT = interpolateCGM(tt)
-% INTERPOLATECGM resample and formats cgm tables on the hour.
+% INTERPOLATECGM Interpolates CGM readings to regular spaced (5 minute
+% intervals) glucose measurements.
 %
 %   SYNTAX:
 %   cgmTT = interpolateCGM(tt) converts an irregular cgm timetable to a regular timetable that is sampled at 5 minutes 
@@ -53,10 +54,16 @@ function validateInputTable(tt)
     end
 
     cgm = tt.cgm;
-    if ~isnumeric(cgm) || any(~isfinite(cgm)) || any(cgm < 0)
-        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must contain finite, nonnegative numeric values.");
+    if ~isnumeric(cgm)
+        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be numeric.");
     end
-    
+    if any(~isfinite(cgm))
+        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be finite.");
+    end
+    if any(cgm < 0)
+        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be nonnegative.");
+    end
+
     if height(tt) < 2
         error(TestHelpers.ERROR_ID_INSUFFICIENT_DATA, "''tt'' must contain at least two samples to be resampled.");
     end
