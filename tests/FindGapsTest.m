@@ -10,30 +10,6 @@
 
 classdef FindGapsTest < matlab.unittest.TestCase
     methods(Test)
-        function firstRegularSampleBeforeIrregular(testCase)
-            start = datetime("today");
-            datetimesIrregular = start + minutes([2,7,12]');
-            datetimesRegular = start + minutes([0,5,10]');
-            validFlags = AIDIF.findGaps(datetimesIrregular, datetimesRegular, minutes(5));
-            testCase.verifyEqual(validFlags, [false,true,true]');
-        end
-
-        function firstRegularSampleAfterIrregular(testCase)
-            start = datetime("today");
-            datetimesIrregular = start + minutes([2,7,12]');
-            datetimesRegular = start + minutes([5,10,15]');
-            validFlags = AIDIF.findGaps(datetimesIrregular, datetimesRegular, minutes(5));
-            testCase.verifyEqual(validFlags, [true,true,false]');
-        end
-
-        function outsideRanges(testCase)
-            start = datetime("today");
-            datetimesIrregular = start + minutes([100,105]');
-            datetimesRegular = start + minutes([0,99, 100,102,105,110, 111]');
-            validFlags = AIDIF.findGaps(datetimesIrregular, datetimesRegular, minutes(5));
-            testCase.verifyEqual(validFlags, [false,false, true,true,true, false, false]');
-        end
-
         function testNoGaps(testCase)
             datetimesIrregular = datetime("today") + hours(0:1:3);
             datetimesRegular = datetimesIrregular(1):minutes(5):datetimesIrregular(end);

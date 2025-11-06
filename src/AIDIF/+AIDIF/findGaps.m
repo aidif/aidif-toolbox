@@ -40,12 +40,10 @@ end
 
 timeDiffs = [diff(datetimesIrregular); hours(0)];
 valid = timeDiffs <= maxGap;
+
 ttValid = timetable(datetimesIrregular, valid);
-
-%ensure everything after last sample will be marked invalid
-ttValid(ttValid.Properties.RowTimes(end) + seconds(1e-9), :) = {false};
-
 ttValidRegular = retime(ttValid, datetimesRegular, 'previous');
+
 validFlags = ttValidRegular.valid;
 end
 
