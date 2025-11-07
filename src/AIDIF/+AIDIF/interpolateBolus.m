@@ -4,14 +4,12 @@ function ttResampled = interpolateBolus(tt)
 %   bolusTT = INTERPOLATEBOLUS(tt)
 %
 %   Inputs:
-%     tt - timetable of irregular spaced bolus events
-%        (`Time` datetime array (5 minute intervals, aligned to midnight)
+%     tt - timetable of irregular spaced bolus events:
 %        (`bolus` - float column holding the bolus dose (U of insulin) delivered)
 %        (`delivery_duration` - duration of delivery (>0 for extended boluses, 0 indicates standard bolus)
 %
 %   Outputs:
-%     bolusTT - timetable with regular spaced (5-minute) insulin deliveries:
-%        (`Time`: datetime array (5 minute intervals, aligned to midnight)
+%     bolusTT - timetable with regular spaced (5 minute intervals, aligned to the hour) insulin deliveries:
 %        (`InsulinDelivery`: insulin amount (U) delivered each interval (U)
 
 %   Author: Jan Wrede
