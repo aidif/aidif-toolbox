@@ -60,9 +60,9 @@ end
 % Custom validation function
 function mustBeSortedDatetime(dt)
     if ~isdatetime(dt)
-        error(TestHelpers.ERROR_ID_INVALID_DATA_TYPE, 'Input must be a datetime array.');
+        error(AIDIF.Constants.ERROR_ID_INVALID_DATA_TYPE, 'Input must be a datetime array.');
     end
     if any(diff(dt) < 0)
-        error(TestHelpers.ERROR_ID_UNSORTED_DATA, 'Datetime array must be sorted in ascending order.');
+        error(AIDIF.Constants.ERROR_ID_UNSORTED_DATA, 'Datetime array must be sorted in ascending order.');
     end
 end

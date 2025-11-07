@@ -56,17 +56,17 @@ end
 
 function validateInputTable(tt)
     if ~ismember('basal_rate', tt.Properties.VariableNames)
-        error(TestHelpers.ERROR_ID_MISSING_COLUMN, "''tt'' must have a ''basal_rate'' column.");
+        error(AIDIF.Constants.ERROR_ID_MISSING_COLUMN, "''tt'' must have a ''basal_rate'' column.");
     end
     br = tt.basal_rate;
     if ~isnumeric(br) || any(~isfinite(br)) || any(br < 0)
-        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''basal_rate'' must contain finite, nonnegative numeric values.");
+        error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "''basal_rate'' must contain finite, nonnegative numeric values.");
     end
     
     if height(tt) < 2
-        error(TestHelpers.ERROR_ID_INSUFFICIENT_DATA, "''tt'' must contain at least two samples to be resampled.");
+        error(AIDIF.Constants.ERROR_ID_INSUFFICIENT_DATA, "''tt'' must contain at least two samples to be resampled.");
     end
     if ~issorted(tt.Properties.RowTimes,"ascend")
-        error(TestHelpers.ERROR_ID_UNSORTED_DATA, "''tt''must be sorted ascending by time.");
+        error(AIDIF.Constants.ERROR_ID_UNSORTED_DATA, "''tt''must be sorted ascending by time.");
     end
 end
