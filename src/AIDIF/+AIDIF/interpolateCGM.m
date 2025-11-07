@@ -7,15 +7,13 @@ function cgmTT = interpolateCGM(tt)
 %       intervals and aligned on the hour.
 %
 %   INPUTS:
-%   tt - timetable containing the following variables:
-%       Time - datetime values of the timetable. The datetime values
-%           must not contain duplicates.
-%       cgm - cgm glucose values(mg/dL) for the corresponding datetime values. The cgm 
-%           values must be numerical.
+%   tt - timetable of cgm values irregular spaced, sorted and without
+%   duplicates.
+%       cgm - continuous glucose measurements (mg/dL). Values must be numerical.
 %
 %   OUTPUTS: 
 %   cgmTT - timetable with regular spaced (5 minute intervals, aligned to the hour) cgm measurements:
-%       cgm - cgm glucose values(mg/dL) which are linearly interpolated. if tt contains gaps spanning more than 
+%       cgm - continuous glucose measurements (mg/dL) linearly interpolated. if tt contains gaps spanning more than 
 %           30 minutes, the interpolated values in cgmTT are set to NaN.
 
 %   Author: Michael Wheelock
