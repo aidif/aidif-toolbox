@@ -1,4 +1,4 @@
-function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGap)
+function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGap, includeGapStart)
 % FINDGAPS Compute validity flags for resampled datetime array based on data gaps
 %
 %   validFlags = FINDGAPS(datetimesIrregular, datetimesRegular, maxGapHours) 
@@ -32,6 +32,7 @@ arguments (Input)
     datetimesIrregular datetime {mustBeSortedDatetime}
     datetimesRegular datetime {mustBeSortedDatetime}
     maxGap {duration}
+    includeGapStart {logical} = true
 end
 
 arguments (Output)
@@ -42,17 +43,25 @@ timeDiffs = [diff(datetimesIrregular); hours(0)];
 valid = timeDiffs <= maxGap;
 ttValid = timetable(datetimesIrregular, valid);
 
-%ensure everything after last sample will be marked invalid
-%ttValid(ttValid.Properties.RowTimes(end) + seconds(1e-9), :) = {false};
+% Ensure last sample will be marked invalid
 ttValid(ttValid.Properties.RowTimes(end), :) = {false};
 
-ttValidRegular = retime(ttValid, datetimesRegular, 'previous');
-
-% Check if datetimesIrregular exists in ttValidRegular before setting valid = true
-mask = ismember(datetimesIrregular, ttValidRegular.Properties.RowTimes);
-if any(mask)
-    ttValidRegular(datetimesIrregular(mask), 'valid') = {true};
+if includeGapStart
+    %find the true false transition and add move the false one nanosecond, keep a true right before the false
+    bGapStarts = ttValid.valid(1:end-1) == true & ~ttValid.valid(2:end);
+    gapStartTimes = ttValid.Properties.RowTimes(logical([0;bGapStarts]),:);
+    ttValid(gapStartTimes,'valid') = {true};
+    ttValid(gapStartTimes+seconds(1e-9),'valid') = {false};
 end
+
+ttValid = sortrows(ttValid);
+
+ttValidRegular = retime(ttValid, datetimesRegular, 'previous');
+% 
+%mask = ismember(datetimesIrregular, ttValidRegular.Properties.RowTimes);
+%if any(mask)
+%    ttValidRegular(datetimesIrregular(mask), 'valid') = {true};
+%end
 
 validFlags = ttValidRegular.valid;
 end
