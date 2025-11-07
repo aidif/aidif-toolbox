@@ -31,16 +31,14 @@ classdef FindGapsTest < matlab.unittest.TestCase
             datetimesIrregular = start + minutes([100,105]');
             datetimesRegular = start + minutes([0,99, 100,102,105,110, 111]');
             validFlags = AIDIF.findGaps(datetimesIrregular, datetimesRegular, minutes(5));
-            testCase.verifyEqual(validFlags, [false,false, true,true, false, false, false]');
+            testCase.verifyEqual(validFlags, [false, false, true, true, true, false, false]');
         end
 
         function testNoGaps(testCase)
             datetimesIrregular = datetime("today") + hours(0:1:3);
             datetimesRegular = datetimesIrregular(1):minutes(30):datetimesIrregular(end);
             validFlags = AIDIF.findGaps(datetimesIrregular', datetimesRegular', hours(2));
-            testCase.verifyTrue(all(validFlags(1:end-1)));
-            testCase.verifyFalse(validFlags(end));
-            %testCase.verifyEqual(length(validFlags), length(datetimesRegular));
+            testCase.verifyTrue(all(validFlags));
         end
 
         function testAllGapsPerfectAligned(testCase)
