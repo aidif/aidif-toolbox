@@ -20,7 +20,7 @@ import AIDIF.constructHiveQueryTable
 
 %% create the import query table for babelbetes hive schema
 %assign root folder for babelbetes data partition in rootFolder variable
-rootFolder = "/Users/jan/git/aidif/out";
+rootFolder = "/Users/jan/git/nudgebg/babelbetes/data/out";
 queryTable = constructHiveQueryTable(rootFolder);
 fprintf("There are %d rows",height(queryTable))
 
@@ -32,59 +32,48 @@ fprintf("There are %d rows",height(queryTable))
 
 %select a random of 6 patients
 
-uniquePatients = unique(queryTable(:,["study_name","patient_id"]));
-fprintf("There are %d unique patients",height(uniquePatients));
+patients = unique(queryTable(:,["study_name","patient_id"]));
+fprintf("There are %d unique patients",height(patients));
 nPatients = 200;
-randomIndexes = randi([1,height(uniquePatients)],nPatients,1);
-%randomPatients = uniquePatients(randomIndexes,:);
-randomPatients = uniquePatients;
+%randomIndexes = randi([1,height(patients)],nPatients,1);
+%patients = patients(randomIndexes,:);
 
 %%
-errorLog = {};
-for iRandomPatient = 1:height(randomPatients)
-    rowMask = ismember(queryTable(:, {'study_name','patient_id'}), randomPatients(iRandomPatient,:));
+logs = cell(height(patients),1);
+for iPatient = 1:height(patients)
+    rowMask = ismember(queryTable(:, {'study_name','patient_id'}), patients(iPatient,:));
     rows = queryTable(rowMask,:);
     
-    % TODO Any file verification/alignment needed
-    if height(rows)~=3
-        warning("Patient %s from study %s does not have the expected number of data entries.", ...
-                string(randomPatients.patient_id(iRandomPatient)), ...
-                string(randomPatients.study_name(iRandomPatient)));
-        continue
-    end
     if ~all(ismember(rows.data_type,["basal","bolus","cgm"]))
-        warning("Patient %s from study %s has missing data.", string(randomPatients.patient_id(iRandomPatient)), string(randomPatients.study_name(iRandomPatient)))
+        warning("Patient %s from study %s has missing data.", string(patients.patient_id(iPatient)), string(patients.study_name(iPatient)))
         continue
     end
-    
     
     % Resampling
     try
         basalPath = rows(rows.data_type=='basal',"path").path;
         rawBasal = parquetread(basalPath, "OutputType", "timetable");
         basalResampled = AIDIF.interpolateBasal(rawBasal);
-    
+        result = "success";
     catch exception
         
         fprintf('Error processing patient %s from study %s: %s\n', ...
-                string(randomPatients.patient_id(iRandomPatient)), ...
-                string(randomPatients.study_name(iRandomPatient)), ...
+                string(patients.patient_id(iPatient)), ...
+                string(patients.study_name(iPatient)), ...
                 exception.message);
-
-        % Append error details to a structure array
-        s=struct("study_name", string(randomPatients.study_name(iRandomPatient)),...
-        "patient_id", string(randomPatients.patient_id(iRandomPatient)),...
-        "data_type", "basal",...
-        "error_message", exception.message);
-        errorLog{end+1} = s;
-        continue
+        result = exception.message;
     end
-
-     s=struct("study_name", string(randomPatients.study_name(iRandomPatient)),...
-        "patient_id", string(randomPatients.patient_id(iRandomPatient)),...
+   
+     s=struct("study_name", string(patients.study_name(iPatient)),...
+        "patient_id", string(patients.patient_id(iPatient)),...
         "data_type", "basal",...
-        "error_message", "Success");
-     errorLog{end+1} = s;
+        "result", result);
+     logs{iPatient} = s;
 end
 
-errorLogTable = struct2table([errorLog{:}]);
+logTable = struct2table([logs{:}]);
+groupsummary(logTable, ["study_name", "result"])
+
+errorLogTable = logTable(logTable.result ~= 'success',:);
+errorSummary = groupsummary(errorLogTable, ["study_name", "result"]);
+errorSummary = sortrows(errorSummary,'GroupCount','descend');
