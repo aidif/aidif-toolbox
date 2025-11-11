@@ -7,10 +7,12 @@ function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGap, inc
 %   of data in the original irregular datetime array.
 %
 %   Inputs:
-%       datetimesIrregular - datetime array with original irregularly spaced events
-%       datetimesRegular   - datetime array with regularly spaced times
-%       maxGap             - duration; maximum time between consecutive events in datetimesIrregular 
+%       datetimesIrregular - datetime : array with original irregularly spaced events
+%       datetimesRegular   - datetime : array with regularly spaced times
+%       maxGap             - duration : maximum time between consecutive events in datetimesIrregular 
 %                            before the data is considered missing
+%       includeGapStart    - logical : wether to include the start of a gap as valid (default true). 
+%                            When set to true, values matching the start of a gap are kept valid.
 %
 %   Outputs:
 %       validFlags         - logical array with same length as datetimesRegular
@@ -47,7 +49,7 @@ ttValid = timetable(datetimesIrregular, valid);
 ttValid(ttValid.Properties.RowTimes(end), :) = {false};
 
 if includeGapStart
-    %find the true false transition and add move the false one nanosecond, keep a true right before the false
+    %find the true->false transition and add move the false one nanosecond, keep a true right before the false
     bGapStarts = ttValid.valid(1:end-1) == true & ~ttValid.valid(2:end);
     gapStartTimes = ttValid.Properties.RowTimes(logical([0;bGapStarts]),:);
     ttValid(gapStartTimes,'valid') = {true};
