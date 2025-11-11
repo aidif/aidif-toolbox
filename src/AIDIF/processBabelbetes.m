@@ -39,41 +39,57 @@ nPatients = 200;
 %patients = patients(randomIndexes,:);
 
 %%
-logs = cell(height(patients),1);
+DATA_TYPES = ["basal","bolus","cgm"];
+
+logs = cell(height(patients),3);
 for iPatient = 1:height(patients)
     rowMask = ismember(queryTable(:, {'study_name','patient_id'}), patients(iPatient,:));
     rows = queryTable(rowMask,:);
     
+    patient = string(patients.patient_id(iPatient));
+    study = string(patients.study_name(iPatient));
+
     if ~all(ismember(rows.data_type,["basal","bolus","cgm"]))
-        warning("Patient %s from study %s has missing data.", string(patients.patient_id(iPatient)), string(patients.study_name(iPatient)))
-        continue
+        warning("Patient %s from study %s has missing data.", patient, study)
     end
     
-    % Resampling
-    try
-        basalPath = rows(rows.data_type=='basal',"path").path;
-        rawBasal = parquetread(basalPath, "OutputType", "timetable");
-        basalResampled = AIDIF.interpolateBasal(rawBasal);
-        result = "success";
-    catch exception
-        
-        fprintf('Error processing patient %s from study %s: %s\n', ...
-                string(patients.patient_id(iPatient)), ...
-                string(patients.study_name(iPatient)), ...
-                exception.message);
-        result = exception.message;
+    for iType = 1:1:3
+        dataType = DATA_TYPES(iType);
+        try
+            if any(ismember(rows.data_type,dataType))
+                path = rows(rows.data_type==dataType,"path").path;
+                ttRaw = parquetread(path, "OutputType", "timetable");
+                switch dataType
+                    case "basal"
+                        ttResampled = AIDIF.interpolateBasal(ttRaw);
+                    case "bolus"
+                        ttResampled = AIDIF.interpolateBolus(ttRaw);
+                    case "cgm"
+                        ttResampled = AIDIF.interpolateCGM(ttRaw);
+                end
+                result = "success";
+            else
+                error("No %s file found",dataType);
+            end
+        catch exception
+            %fprintf('Error %s | %s | %s : %s\n', study, patient, dataType,exception.message);
+            result = exception.message;
+        end
+
+         s=struct("study_name", study, "patient_id", patient, "data_type", dataType, "result", result);
+         logs{iPatient,iType} = s;
     end
-   
-     s=struct("study_name", string(patients.study_name(iPatient)),...
-        "patient_id", string(patients.patient_id(iPatient)),...
-        "data_type", "basal",...
-        "result", result);
-     logs{iPatient} = s;
 end
 
 logTable = struct2table([logs{:}]);
-groupsummary(logTable, ["study_name", "result"])
+successCounts = groupsummary(logTable, ["study_name", "data_type", "result"]);
+successRates = groupsummary(logTable, ["study_name","data_type"], @(r) mean(strcmp(r, 'success'))*100, "result");
 
-errorLogTable = logTable(logTable.result ~= 'success',:);
-errorSummary = groupsummary(errorLogTable, ["study_name", "result"]);
-errorSummary = sortrows(errorSummary,'GroupCount','descend');
+resultCounts = groupsummary(logTable, ["study_name", "data_type", "result"]);
+sortrows(resultCounts,["study_name","data_type"])
+
+
+
+%errorLogTable = logTable(logTable.result ~= 'success',:);
+%errorSummary = groupsummary(errorLogTable, ["study_name", "data_type", "result"]);
+%errorSummary = sortrows(errorSummary,'GroupCount','descend');
