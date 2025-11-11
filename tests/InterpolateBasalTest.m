@@ -18,7 +18,7 @@ classdef InterpolateBasalTest <  matlab.unittest.TestCase
     methods (Test)
         function singleValueError(testCase)
             tt = timetable(datetime('today'), 1, 'VariableNames', {'basal_rate'});
-            testCase.verifyError(@() AIDIF.interpolateBasal(tt), TestHelpers.ERROR_ID_INSUFFICIENT_DATA);
+            testCase.verifyError(@() AIDIF.interpolateBasal(tt), AIDIF.Constants.ERROR_ID_INSUFFICIENT_DATA);
         end
 
         function zeroRate(testCase)
