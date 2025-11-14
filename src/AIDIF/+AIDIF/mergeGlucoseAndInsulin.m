@@ -38,23 +38,28 @@ end
 arguments (Output)
     combinedTT timetable
 end
+
+%synchronize with 0 values to fill trail ends, then repopulate NaN values
 mergedInsulin = synchronize(basalTT,bolusTT,'union','fillwithconstant');
 mergedInsulin{:,"totalInsulin"} = mergedInsulin{:,1} + mergedInsulin{:,2};
 mergedInsulin = removevars(mergedInsulin,[1 2]);
+nanRows = [basalTT.Properties.RowTimes(isnan(basalTT.InsulinDelivery));bolusTT.Properties.RowTimes(isnan(bolusTT.InsulinDelivery))];
+mergedInsulin{nanRows,"totalInsulin"} = NaN;
 
 combinedTT = synchronize(cgmTT,mergedInsulin,'union','fillwithmissing');
+combinedTT = renamevars(combinedTT,"cgm","egv");
 
 end
 
 function mustBeRegular(tt)
-if any(diff(diff(tt.Properties.RowTimes)~= minutes(5)))
+if any(diff(tt.Properties.RowTimes)~= minutes(5))
     error(TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE,"timetable is not regular at 5 minute intervals.")
 end
 end
 
 function mustBeHourAligned(tt)
 time = tt.Properties.RowTimes;
-if ~all(ismember(minute(tt.Properties.RowTimes),0:5:55)) || any(second(tt.Properties.RowTimes))
+if ~all(ismember(minute(time),0:5:55)) || any(second(time))
     error(TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE,"timetable is not aligned to the hour.")
 end
 end

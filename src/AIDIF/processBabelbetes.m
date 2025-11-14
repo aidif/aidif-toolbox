@@ -97,7 +97,7 @@ for iPatient = 1:numel(uniquePatient)
             end
         end
     elseif  breakFlag == 1
-        breakFlag = 0
+        breakFlag = 0;
         continue
     else
         warning("Patient %s from study %s has missing data.", patient, study)
