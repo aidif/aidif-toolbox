@@ -16,80 +16,93 @@
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
-import AIDIF.constructHiveQueryTable
+import AIDIF.*
 
 %% create the import query table for babelbetes hive schema
 %assign root folder for babelbetes data partition in rootFolder variable
-rootFolder = "/Users/jan/git/nudgebg/babelbetes/data/out";
+rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23";
 queryTable = constructHiveQueryTable(rootFolder);
-fprintf("There are %d rows",height(queryTable))
-
-%TODO: Eclude Loop for now
-%queryTable = queryTable(queryTable.study_name ~= "Loop",:);
 
 %% ingest babelbetes data, by study and subject, for all data types.
+% create subset for example processing
+[~,uniquePatient,occurrences] = unique(queryTable(:,["study_name" "patient_id"]),...
+                                "rows","stable");
+tic
+parfor iPatient = 1:numel(uniquePatient)
 
+    patientFiles = queryTable(occurrences == uniquePatient(iPatient),:);
 
-%select a random of 6 patients
+    if all(ismember(patientFiles.data_type,["cgm","basal","bolus"]))
 
-patients = unique(queryTable(:,["study_name","patient_id"]));
-fprintf("There are %d unique patients",height(patients));
-nPatients = 200;
-%randomIndexes = randi([1,height(patients)],nPatients,1);
-%patients = patients(randomIndexes,:);
+        breakFlag = 0;
+        for iFile = 1:height(patientFiles)
 
-%%
-DATA_TYPES = ["basal","bolus","cgm"];
+            if breakFlag == 1
+                        warning("Unable to process patient %s from study %s.", patientFiles.patient_id(iFile),...
+                            patientFiles.study_name(iFile))
+                        break
+            end
 
-logs = cell(height(patients),3);
-for iPatient = 1:height(patients)
-    rowMask = ismember(queryTable(:, {'study_name','patient_id'}), patients(iPatient,:));
-    rows = queryTable(rowMask,:);
-    
-    patient = string(patients.patient_id(iPatient));
-    study = string(patients.study_name(iPatient));
+            currentDataType = patientFiles.data_type(iFile);
 
-    if ~all(ismember(rows.data_type,["basal","bolus","cgm"]))
+            %Apply general corrections
+            rawData = parquetread(patientFiles.path(iFile),"OutputType","timetable");
+            rawData = sortrows(rawData,'datetime','ascend');
+            dups = findDuplicates(rawData(:,[]));
+            rawData(dups,:) = [];
+
+            switch currentDataType
+                case "cgm"
+                    % cgm corrections
+                    rawData.cgm = double(rawData.cgm);
+                    try
+                        cgmTable = interpolateCGM(rawData);
+                    catch ME
+                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_INSUFFICIENT_DATA)
+                            ME.message
+                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
+                                patientFiles.study_name(iFile),currentDataType)
+                            break
+                        end
+                    end
+
+                case "basal"
+                    % basal corrections
+                    rawData(isnan(rawData.basal_rate),:) = [];
+                    try
+                        basalTable = interpolateBasal(rawData);
+                    catch ME
+                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_INSUFFICIENT_DATA)
+                            ME.message
+                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
+                                patientFiles.study_name(iFile),currentDataType)
+                            break
+                        end
+                    end
+
+                case "bolus"
+                    % bolus corrections
+                    rawData(rawData.bolus == 0,:) = [];
+                    rawData.delivery_duration = seconds(rawData.delivery_duration);
+                    try
+                    bolusTable = interpolateBolus(rawData);
+                    catch ME
+                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES)
+                            ME.message
+                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
+                                patientFiles.study_name(iFile),currentDataType)
+                            break
+                        end
+                    end
+                    
+                otherwise
+                    disp(currentDataType + " file not processed.")
+            end
+        end
+    else
         warning("Patient %s from study %s has missing data.", patient, study)
     end
-    
-    for iType = 1:1:3
-        dataType = DATA_TYPES(iType);
-        try
-            if any(ismember(rows.data_type,dataType))
-                path = rows(rows.data_type==dataType,"path").path;
-                ttRaw = parquetread(path, "OutputType", "timetable");
-                switch dataType
-                    case "basal"
-                        ttResampled = AIDIF.interpolateBasal(ttRaw);
-                    case "bolus"
-                        ttResampled = AIDIF.interpolateBolus(ttRaw);
-                    case "cgm"
-                        ttResampled = AIDIF.interpolateCGM(ttRaw);
-                end
-                result = "success";
-            else
-                error("No %s file found",dataType);
-            end
-        catch exception
-            %fprintf('Error %s | %s | %s : %s\n', study, patient, dataType,exception.message);
-            result = exception.message;
-        end
+    % TODO combine cgm, basal, and bolus functions
 
-         s=struct("study_name", study, "patient_id", patient, "data_type", dataType, "result", result);
-         logs{iPatient,iType} = s;
-    end
 end
-
-logTable = struct2table([logs{:}]);
-successCounts = groupsummary(logTable, ["study_name", "data_type", "result"]);
-successRates = groupsummary(logTable, ["study_name","data_type"], @(r) mean(strcmp(r, 'success'))*100, "result");
-
-resultCounts = groupsummary(logTable, ["study_name", "data_type", "result"]);
-sortrows(resultCounts,["study_name","data_type"])
-
-
-
-%errorLogTable = logTable(logTable.result ~= 'success',:);
-%errorSummary = groupsummary(errorLogTable, ["study_name", "data_type", "result"]);
-%errorSummary = sortrows(errorSummary,'GroupCount','descend');
+toc
