@@ -28,7 +28,7 @@ queryTable = constructHiveQueryTable(rootFolder);
 [~,uniquePatient,occurrences] = unique(queryTable(:,["study_name" "patient_id"]),...
                                 "rows","stable");
 tic
-parfor iPatient = 1:numel(uniquePatient)
+for iPatient = 1:numel(uniquePatient)
 
     patientFiles = queryTable(occurrences == uniquePatient(iPatient),:);
 
@@ -36,12 +36,6 @@ parfor iPatient = 1:numel(uniquePatient)
 
         breakFlag = 0;
         for iFile = 1:height(patientFiles)
-
-            if breakFlag == 1
-                        warning("Unable to process patient %s from study %s.", patientFiles.patient_id(iFile),...
-                            patientFiles.study_name(iFile))
-                        break
-            end
 
             currentDataType = patientFiles.data_type(iFile);
 
@@ -56,12 +50,13 @@ parfor iPatient = 1:numel(uniquePatient)
                     % cgm corrections
                     rawData.cgm = double(rawData.cgm);
                     try
-                        cgmTable = interpolateCGM(rawData);
+                        cgmTT = interpolateCGM(rawData);
                     catch ME
                         if strcmp(ME.identifier,TestHelpers.ERROR_ID_INSUFFICIENT_DATA)
                             ME.message
                             warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
                                 patientFiles.study_name(iFile),currentDataType)
+                            breakFlag = 1;
                             break
                         end
                     end
@@ -70,12 +65,13 @@ parfor iPatient = 1:numel(uniquePatient)
                     % basal corrections
                     rawData(isnan(rawData.basal_rate),:) = [];
                     try
-                        basalTable = interpolateBasal(rawData);
+                        basalTT = interpolateBasal(rawData);
                     catch ME
                         if strcmp(ME.identifier,TestHelpers.ERROR_ID_INSUFFICIENT_DATA)
                             ME.message
                             warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
                                 patientFiles.study_name(iFile),currentDataType)
+                            breakFlag = 1;
                             break
                         end
                     end
@@ -85,24 +81,30 @@ parfor iPatient = 1:numel(uniquePatient)
                     rawData(rawData.bolus == 0,:) = [];
                     rawData.delivery_duration = seconds(rawData.delivery_duration);
                     try
-                    bolusTable = interpolateBolus(rawData);
+                        bolusTT = interpolateBolus(rawData);
                     catch ME
                         if strcmp(ME.identifier,TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES)
                             ME.message
                             warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
                                 patientFiles.study_name(iFile),currentDataType)
+                            breakFlag = 1;
                             break
                         end
                     end
-                    
+
                 otherwise
                     disp(currentDataType + " file not processed.")
             end
         end
+    elseif  breakFlag == 1
+        breakFlag = 0
+        continue
     else
         warning("Patient %s from study %s has missing data.", patient, study)
+        continue
     end
     % TODO combine cgm, basal, and bolus functions
+    combinedTT = mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
 
 end
 toc
