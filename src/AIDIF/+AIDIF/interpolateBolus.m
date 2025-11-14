@@ -31,7 +31,7 @@ arguments (Output)
 end
 
 ttStandard = tt(tt.delivery_duration==0, "bolus");
-ttStandard.Time = AIDIF.roundTo5Minutes(ttStandard.Time, "closest");
+ttStandard.Properties.RowTimes = AIDIF.roundTo5Minutes(ttStandard.Properties.RowTimes, "closest");
 ttStandard.Properties.VariableNames{'bolus'} = 'InsulinDelivery';
 
 %extended boluses are converted to rates and resampled treating them as basal rates
@@ -50,7 +50,7 @@ if ~isempty(ttExtended)
 else
     ttCombined = ttStandard;
 end
-newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Time), "start"):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Time), 'start'))';
+newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Properties.RowTimes), "start"):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Properties.RowTimes), 'start'))';
 ttResampled = retime(ttCombined,newTimes,"sum");
 end
 
