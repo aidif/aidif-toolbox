@@ -39,14 +39,15 @@ arguments (Output)
     combinedTT timetable
 end
 
-%synchronize with 0 values to fill trail ends, then repopulate NaN values
-mergedInsulin = synchronize(basalTT,bolusTT,'union','fillwithconstant');
+% Combine Insulin. Clip data to within viable basal range
+mergedInsulin = synchronize(basalTT,bolusTT,"first",'fillwithmissing');
+bolusMatch = ismember(basalTT.Properties.RowTimes,bolusTT.Properties.RowTimes);
+mergedInsulin{~bolusMatch,2} = 0;
 mergedInsulin{:,"totalInsulin"} = mergedInsulin{:,1} + mergedInsulin{:,2};
 mergedInsulin = removevars(mergedInsulin,[1 2]);
-nanRows = [basalTT.Properties.RowTimes(isnan(basalTT.InsulinDelivery));bolusTT.Properties.RowTimes(isnan(bolusTT.InsulinDelivery))];
-mergedInsulin{nanRows,"totalInsulin"} = NaN;
 
-combinedTT = synchronize(cgmTT,mergedInsulin,'union','fillwithmissing');
+% Add egv data. clip data to the common range of data
+combinedTT = synchronize(cgmTT,mergedInsulin,'intersection','fillwithmissing');
 combinedTT = renamevars(combinedTT,"cgm","egv");
 
 end
