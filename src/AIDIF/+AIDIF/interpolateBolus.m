@@ -75,7 +75,7 @@ function validateBolusTable(tt)
     
     bDuplicated = AIDIF.findDuplicates(tt(:,[]));
     if sum(bDuplicated)>0
-        error(TestHelpers.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable has %d rows with duplicated datetimes",num2str(sum(bDuplicated)))
+        error(TestHelpers.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable has %d rows with duplicated datetimes.",sum(bDuplicated))
     end
 end
 
