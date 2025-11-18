@@ -24,12 +24,16 @@ rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/ba
 queryTable = constructHiveQueryTable(rootFolder);
 
 %% ingest babelbetes data, by study and subject, for all data types.
-% create subset for example processing
+% create unique patient subset for processing
 uniquePatient = unique(queryTable(:,["study_name" "patient_id"]),"rows","stable");
 
-tic
-completeCounter = 0; % count patients that finish
+% processing parameters
+completeCounter = 0; % count patients that complete processing
 breakFlag = 0; % flag to abort patient processing if error
+exportFlag = 1; % flag to export data as parquet files 
+exportRoot = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/MATLAB/" +string(datetime("today","Format","uuuu-MM-dd"));
+
+tic
 for iPatient = 1:height(uniquePatient)
 
     patientFiles = queryTable(queryTable.study_name == uniquePatient.study_name(iPatient) &...
@@ -118,6 +122,14 @@ for iPatient = 1:height(uniquePatient)
     completeCounter = completeCounter + 1;
 
     combinedTT = mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+    
+    if exportFlag == 1
+        %save file as parquet
+        filePath = fullfile(exportRoot,"study_name=" + patientFiles.study_name(1),"data_type=combined",...
+            "patient_id="+patientFiles.patient_id(1));
+        mkdir(filePath)
+        parquetwrite(filePath+"\babelbetes_combined.parquet",combinedTT)
+    end
     clear cgmTT basalTT bolusTT
 
 end
