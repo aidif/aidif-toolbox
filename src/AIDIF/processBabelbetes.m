@@ -25,16 +25,18 @@ queryTable = constructHiveQueryTable(rootFolder);
 
 %% ingest babelbetes data, by study and subject, for all data types.
 % create subset for example processing
-[~,uniquePatient,occurrences] = unique(queryTable(:,["study_name" "patient_id"]),...
-                                "rows","stable");
+uniquePatient = unique(queryTable(:,["study_name" "patient_id"]),"rows","stable");
+
 tic
-for iPatient = 1:numel(uniquePatient)
+completeCounter = 0; % count patients that finish
+breakFlag = 0; % flag to abort patient processing if error
+for iPatient = 1:height(uniquePatient)
 
-    patientFiles = queryTable(occurrences == uniquePatient(iPatient),:);
+    patientFiles = queryTable(queryTable.study_name == uniquePatient.study_name(iPatient) &...
+        queryTable.patient_id == uniquePatient.patient_id(iPatient),:);
 
-    if all(ismember(patientFiles.data_type,["cgm","basal","bolus"]))
+    if height(patientFiles) == 3 && all(ismember(patientFiles.data_type,["cgm","basal","bolus"]))
 
-        breakFlag = 0;
         for iFile = 1:height(patientFiles)
 
             currentDataType = patientFiles.data_type(iFile);
@@ -89,6 +91,12 @@ for iPatient = 1:numel(uniquePatient)
                                 patientFiles.study_name(iFile),currentDataType)
                             breakFlag = 1;
                             break
+                        else
+                            ME.message
+                            warning("Patient %s from study %s failed. %s data had unexpected error.", patientFiles.patient_id(iFile),...
+                                patientFiles.study_name(iFile),currentDataType)
+                            breakFlag = 1;
+                            break
                         end
                     end
 
@@ -96,15 +104,21 @@ for iPatient = 1:numel(uniquePatient)
                     disp(currentDataType + " file not processed.")
             end
         end
-    elseif  breakFlag == 1
-        breakFlag = 0;
-        continue
     else
-        warning("Patient %s from study %s has missing data.", patient, study)
+        warning("Patient %s from study %s has missing data.", patientFiles.patient_id(1), patientFiles.study_name(1))
         continue
     end
-    % TODO combine cgm, basal, and bolus functions
+
+    if  breakFlag == 1
+        breakFlag = 0;
+        clear cgmTT basalTT bolusTT
+        continue
+    end
+
+    completeCounter = completeCounter + 1;
+
     combinedTT = mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+    clear cgmTT basalTT bolusTT
 
 end
 toc
