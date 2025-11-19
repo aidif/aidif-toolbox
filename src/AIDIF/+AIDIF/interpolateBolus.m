@@ -23,7 +23,7 @@ function ttResampled = interpolateBolus(tt)
 %   All rights reserved
 
 arguments (Input)
-    tt timetable {validateBolusTable, validateExtendedBolusStopTimes}
+    tt timetable {validateBolusTable, validateExtendedDontOverlap}
 end
 
 arguments (Output)
@@ -60,7 +60,7 @@ function validateBolusTable(tt)
     end
 
     bolus = tt.bolus;
-    if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus <= 0)
+    if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus < 0)
         error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''bolus'' column must contain finite, positive values.");
     end
     
@@ -75,14 +75,15 @@ function validateBolusTable(tt)
     
     bDuplicated = AIDIF.findDuplicates(tt(:,[]));
     if sum(bDuplicated)>0
-        error(TestHelpers.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable has %d rows with duplicated datetimes.",sum(bDuplicated))
+        error(TestHelpers.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable duplicated datetimes.",sum(bDuplicated))
     end
 end
 
-function validateExtendedBolusStopTimes(tt)
-    startEnds = [tt.Properties.RowTimes' ; (tt.Properties.RowTimes + tt.delivery_duration)'];
+function validateExtendedDontOverlap(tt)
+    ttExtended = tt(tt.delivery_duration>0,:);
+    startEnds = [ttExtended.Properties.RowTimes' ; (ttExtended.Properties.RowTimes + ttExtended.delivery_duration)'];
     interleavedTimes = startEnds(:);
     if sum(diff(interleavedTimes,1)<0)
-        error(TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES, "The timetable contains boluses whose deliveries overlap")
+        error(TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES, "The timetable contains overlapping extended boluses")
     end
 end
