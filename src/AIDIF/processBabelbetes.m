@@ -16,44 +16,121 @@
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
-import AIDIF.constructHiveQueryTable
+import AIDIF.*
 
 %% create the import query table for babelbetes hive schema
 %assign root folder for babelbetes data partition in rootFolder variable
-rootFolder = "your/babelbetes/output/path/here";
+rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23";
 queryTable = constructHiveQueryTable(rootFolder);
 
 %% ingest babelbetes data, by study and subject, for all data types.
-% create subset for example processing
-subset = queryTable(ismember(queryTable.study_name,"DCLP3") & ...
-                    ismember(queryTable.patient_id,string(1:10)),:);
-[~,uniquePatient,occurrences] = unique(subset(:,["study_name" "patient_id"]),...
-                                "rows","stable");
+% create unique patient subset for processing
+uniquePatient = unique(queryTable(:,["study_name" "patient_id"]),"rows","stable");
 
-for iPatient = 1:numel(uniquePatient)
+% processing parameters
+completeCounter = 0; % count patients that complete processing
+breakFlag = 0; % flag to abort patient processing if error
+exportFlag = 1; % flag to export data as parquet files 
+exportRoot = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/MATLAB/" +string(datetime("today","Format","uuuu-MM-dd"));
 
-    relevantPaths = subset(occurrences == uniquePatient(iPatient),:);
-    %TODO Any file verification/alignment needed
-    for iFile = 1:height(relevantPaths)
+tic
+for iPatient = 1:height(uniquePatient)
 
-        currentDataType = relevantPaths.data_type(iFile);
-        rawData = parquetread(relevantPaths.path(iFile),"OutputType","timetable");
+    patientFiles = queryTable(queryTable.study_name == uniquePatient.study_name(iPatient) &...
+        queryTable.patient_id == uniquePatient.patient_id(iPatient),:);
 
-        switch currentDataType
-            case "cgm"
-                disp("case 1: " + currentDataType + ...
-                    " data resampled for patient " + string(iPatient))
-            case "basal"
-                disp("case 2: " + currentDataType + ...
-                    " data resampled for patient " + string(iPatient))
-            case "bolus"
-                disp("case 3: " + currentDataType + ...
-                    " data resampled for patient " + string(iPatient))
-            otherwise
-                disp(currentDataType + " file not processed.")
+    if height(patientFiles) == 3 && all(ismember(patientFiles.data_type,["cgm","basal","bolus"]))
+
+        for iFile = 1:height(patientFiles)
+
+            currentDataType = patientFiles.data_type(iFile);
+
+            %Apply general corrections
+            rawData = parquetread(patientFiles.path(iFile),"OutputType","timetable");
+            rawData = sortrows(rawData,'datetime','ascend');
+            dups = findDuplicates(rawData(:,[]));
+            rawData(dups,:) = [];
+
+            switch currentDataType
+                case "cgm"
+                    % cgm corrections
+                    rawData.cgm = double(rawData.cgm);
+                    try
+                        cgmTT = interpolateCGM(rawData);
+                    catch ME
+                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_INSUFFICIENT_DATA)
+                            ME.message
+                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
+                                patientFiles.study_name(iFile),currentDataType)
+                            breakFlag = 1;
+                            break
+                        end
+                    end
+
+                case "basal"
+                    % basal corrections
+                    rawData(isnan(rawData.basal_rate),:) = [];
+                    try
+                        basalTT = interpolateBasal(rawData);
+                    catch ME
+                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_INSUFFICIENT_DATA)
+                            ME.message
+                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
+                                patientFiles.study_name(iFile),currentDataType)
+                            breakFlag = 1;
+                            break
+                        end
+                    end
+
+                case "bolus"
+                    % bolus corrections
+                    rawData(rawData.bolus == 0,:) = [];
+                    rawData.delivery_duration = seconds(rawData.delivery_duration);
+                    try
+                        bolusTT = interpolateBolus(rawData);
+                    catch ME
+                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES)
+                            ME.message
+                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
+                                patientFiles.study_name(iFile),currentDataType)
+                            breakFlag = 1;
+                            break
+                        else
+                            ME.message
+                            warning("Patient %s from study %s failed. %s data had unexpected error.", patientFiles.patient_id(iFile),...
+                                patientFiles.study_name(iFile),currentDataType)
+                            breakFlag = 1;
+                            break
+                        end
+                    end
+
+                otherwise
+                    disp(currentDataType + " file not processed.")
+            end
         end
+    else
+        warning("Patient %s from study %s has missing data.", patientFiles.patient_id(1), patientFiles.study_name(1))
+        continue
     end
 
-    % TODO combine cgm, basal, and bolus functions
+    if  breakFlag == 1
+        breakFlag = 0;
+        clear cgmTT basalTT bolusTT
+        continue
+    end
+
+    completeCounter = completeCounter + 1;
+
+    combinedTT = mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+    
+    if exportFlag == 1
+        %save file as parquet
+        filePath = fullfile(exportRoot,"study_name=" + patientFiles.study_name(1),"data_type=combined",...
+            "patient_id="+patientFiles.patient_id(1));
+        mkdir(filePath)
+        parquetwrite(filePath+"\babelbetes_combined.parquet",combinedTT)
+    end
+    clear cgmTT basalTT bolusTT
 
 end
+toc
