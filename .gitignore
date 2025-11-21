@@ -36,3 +36,5 @@ codegen/
 
 # Cloud based storage dotfile
 .MATLABDriveTag
+Add-Ons
+venv
