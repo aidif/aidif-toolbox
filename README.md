@@ -42,7 +42,7 @@ Background:
 Process:
 
 - Install the prerequests for the [python virtial environment](https://docs.python.org/3/library/venv.html)
-- Ensure you are in the directory this repositry resides in 
+- Ensure you are in the directory this repository resides in 
 - Initialize and activate the environment
 ```
 > make init
@@ -64,8 +64,8 @@ Process:
 ```
 > make run
 ```
-- This will run the static code anlysis and any automated tests to ensure the current state of your code
-- When you are ready to commit your changes the static code analysis checks will run automaticaly 
+- This will run the static code analysis and any automated tests to ensure the current state of your code
+- When you are ready to commit your changes the static code analysis checks will run automatically 
 
 NOTE: If you want to skip the checks on check-in then add `--no-verifying` to your commit message. These checks will still run as part of the CI process though
 
