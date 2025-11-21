@@ -1,0 +1,38 @@
+fail_fast: true
+
+repos:
+-   repo: local
+    hooks:
+    -   id: mh_style
+        name: mh_style
+        entry: mh_style
+        args: [--process-slx, --fix, --html=miss_hit_style.html]
+        files: ^(.*\.(m|slx))$
+        language: python
+        additional_dependencies: [miss_hit_core]
+
+    -   id: mh_metric
+        name: mh_metric
+        entry: mh_metric
+        args: [--ci]
+        files: ^(.*\.(m|slx))$
+        language: python
+        additional_dependencies: [miss_hit_core]
+
+    -   id: mh_lint
+        name: mh_lint
+        entry: mh_lint
+        args: [--html=miss_hit_lint.html]
+        files: ^(.*\.(m|slx))$
+        language: python
+        additional_dependencies: [miss_hit]
+
+# TODO: Re-enable these hooks once ready
+# -   repo: https://github.com/pre-commit/pre-commit-hooks
+#     rev: v6.0.0
+#     hooks:
+#     -   id: check-yaml
+#     -   id: trailing-whitespace
+#     -   id: end-of-file-fixer
+#     -   id: check-added-large-files
+#         args: ['--maxkb=200']
