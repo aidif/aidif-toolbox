@@ -23,7 +23,7 @@ function ttResampled = interpolateBolus(tt)
 %   All rights reserved
 
 arguments (Input)
-    tt timetable {validateBolusTable, validateExtendedDontOverlap}
+    tt timetable {validateBolusTable}
 end
 
 arguments (Output)
@@ -76,14 +76,5 @@ function validateBolusTable(tt)
     bDuplicated = AIDIF.findDuplicates(tt(:,[]));
     if sum(bDuplicated)>0
         error(TestHelpers.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable duplicated datetimes.",sum(bDuplicated))
-    end
-end
-
-function validateExtendedDontOverlap(tt)
-    ttExtended = tt(tt.delivery_duration>0,:);
-    startEnds = [ttExtended.Properties.RowTimes' ; (ttExtended.Properties.RowTimes + ttExtended.delivery_duration)'];
-    interleavedTimes = startEnds(:);
-    if sum(diff(interleavedTimes,1)<0)
-        error(TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES, "The timetable contains overlapping extended boluses")
     end
 end

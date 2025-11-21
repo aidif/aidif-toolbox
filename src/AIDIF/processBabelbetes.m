@@ -23,114 +23,59 @@ import AIDIF.*
 rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23";
 queryTable = constructHiveQueryTable(rootFolder);
 
-%% ingest babelbetes data, by study and subject, for all data types.
-% create unique patient subset for processing
-uniquePatient = unique(queryTable(:,["study_name" "patient_id"]),"rows","stable");
-
-% processing parameters
-completeCounter = 0; % count patients that complete processing
-breakFlag = 0; % flag to abort patient processing if error
-exportFlag = 1; % flag to export data as parquet files 
-exportRoot = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/MATLAB/" +string(datetime("today","Format","uuuu-MM-dd"));
-
+%% Resample and combine the raw data.
+uniquePatient = findgroups(queryTable(:,["study_name" "patient_id"]));
 tic
-for iPatient = 1:height(uniquePatient)
-
-    patientFiles = queryTable(queryTable.study_name == uniquePatient.study_name(iPatient) &...
-        queryTable.patient_id == uniquePatient.patient_id(iPatient),:);
-
-    if height(patientFiles) == 3 && all(ismember(patientFiles.data_type,["cgm","basal","bolus"]))
-
-        for iFile = 1:height(patientFiles)
-
-            currentDataType = patientFiles.data_type(iFile);
-
-            %Apply general corrections
-            rawData = parquetread(patientFiles.path(iFile),"OutputType","timetable");
-            rawData = sortrows(rawData,'datetime','ascend');
-            dups = findDuplicates(rawData(:,[]));
-            rawData(dups,:) = [];
-
-            switch currentDataType
-                case "cgm"
-                    % cgm corrections
-                    rawData.cgm = double(rawData.cgm);
-                    try
-                        cgmTT = interpolateCGM(rawData);
-                    catch ME
-                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_INSUFFICIENT_DATA)
-                            ME.message
-                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
-                                patientFiles.study_name(iFile),currentDataType)
-                            breakFlag = 1;
-                            break
-                        end
-                    end
-
-                case "basal"
-                    % basal corrections
-                    rawData(isnan(rawData.basal_rate),:) = [];
-                    try
-                        basalTT = interpolateBasal(rawData);
-                    catch ME
-                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_INSUFFICIENT_DATA)
-                            ME.message
-                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
-                                patientFiles.study_name(iFile),currentDataType)
-                            breakFlag = 1;
-                            break
-                        end
-                    end
-
-                case "bolus"
-                    % bolus corrections
-                    rawData(rawData.bolus == 0,:) = [];
-                    rawData.delivery_duration = seconds(rawData.delivery_duration);
-                    try
-                        bolusTT = interpolateBolus(rawData);
-                    catch ME
-                        if strcmp(ME.identifier,TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES)
-                            ME.message
-                            warning("Patient %s from study %s failed. Unable to process %s data.", patientFiles.patient_id(iFile),...
-                                patientFiles.study_name(iFile),currentDataType)
-                            breakFlag = 1;
-                            break
-                        else
-                            ME.message
-                            warning("Patient %s from study %s failed. %s data had unexpected error.", patientFiles.patient_id(iFile),...
-                                patientFiles.study_name(iFile),currentDataType)
-                            breakFlag = 1;
-                            break
-                        end
-                    end
-
-                otherwise
-                    disp(currentDataType + " file not processed.")
-            end
-        end
-    else
-        warning("Patient %s from study %s has missing data.", patientFiles.patient_id(1), patientFiles.study_name(1))
-        continue
-    end
-
-    if  breakFlag == 1
-        breakFlag = 0;
-        clear cgmTT basalTT bolusTT
-        continue
-    end
-
-    completeCounter = completeCounter + 1;
-
-    combinedTT = mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
-    
-    if exportFlag == 1
-        %save file as parquet
-        filePath = fullfile(exportRoot,"study_name=" + patientFiles.study_name(1),"data_type=combined",...
-            "patient_id="+patientFiles.patient_id(1));
-        mkdir(filePath)
-        parquetwrite(filePath+"\babelbetes_combined.parquet",combinedTT)
-    end
-    clear cgmTT basalTT bolusTT
-
-end
+splitapply(@processPatient,queryTable.study_name, queryTable.patient_id, queryTable.data_type,...
+    queryTable.path,uniquePatient);
 toc
+
+function processPatient(studyName,patient,dataType,path)
+datasets = cell2table(arrayfun(@(x) parquetread(x,"OutputType","timetable"),path,'UniformOutput',false));
+if height(datasets) ~= 3
+    return
+end
+
+datasets = cell2table(rowfun(@checkAndFormatTables,datasets,"ExtractCellContents",true,"OutputFormat","cell","NumOutputs",2),"RowNames",dataType,"VariableNames",["tt" "errorLog"]);
+if ~isempty(datasets.errorLog)
+    return
+end
+
+parfor i = 1:height(datasets)
+    switch dataType(i)
+        case "cgm"
+            cgmTT = AIDIF.interpolateCGM(datasets.tt{i});
+        case "basal"
+            basalTT = AIDIF.interpolateBasal(datasets.tt{i});
+        case "bolus"
+            bolusTT = AIDIF.interpolateBolus(datasets.tt{i});
+    end
+end
+combinedTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+end
+
+
+function [formattedTable,log] = checkAndFormatTables(rawTT)
+if height(rawTT) < 2
+    warning('table too short')
+    return
+end
+rawTT = sortrows(rawTT,"datetime","ascend");
+dups = AIDIF.findDuplicates(rawTT(:,[]));
+rawTT(dups,:) = [];
+rawTT = convertvars(rawTT,1,"double");
+
+if any(ismember(rawTT.Properties.VariableNames,'delivery_duration'))
+    rawTT.delivery_duration = seconds(rawTT.delivery_duration);
+    try
+        AIDIF.interpolateBolus(rawTT);
+    catch ME
+        warning('bolus data failed processing')
+        log = 1
+        formattedTable = [];
+        return
+    end
+end
+formattedTable = rawTT;
+log = [];
+end
