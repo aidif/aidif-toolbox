@@ -3,11 +3,15 @@ VENV_BIN ?= $(VENV)/bin
 PY   ?= $(VENV_BIN)/python
 PIP  ?= $(VENV_BIN)/pip
 
-
+.PHONY: venv install activate clean run-tests check-matlab install-requirements clean-venv install-pre-commit clean-pre-commit run-pre-commit install run-checks
 
 venv:
 	python3 -m venv $(VENV)
 	$(PY) -m pip install --upgrade pip setuptools wheel
+	bash -c "source $(VENV)/bin/activate"
+
+check-venv:
+	@command -v $(PY) >/dev/null 2>&1 || (echo "Python not found in virtual environment. Please create the virtual environment." && exit 1)
 
 activate:
 	@echo "To activate the virtualenv in your current shell run:"
@@ -35,10 +39,26 @@ clean-pre-commit:
 run-pre-commit:
 	pre-commit run --all-files
 
-install: install-requirements install-pre-commit
+init: venv activate
 
-clean: clean-venv clean-pre-commit 
+install: venv install-requirements install-pre-commit
 
-run-all: clean install run-pre-commit run-tests
+clean: clean-pre-commit clean-venv 
 
-run-checks: run-pre-commit run-tests
+run: run-pre-commit run-tests
+
+validate-setup: check-venv check-matlab
+
+help:
+	@echo "Makefile Help:"
+	@echo "Available targets:"
+	@echo "  init - Initialize the development environment"
+	@echo "  install - Install dependencies and pre-commit hooks"
+	@echo "  run - Run pre-commit checks and tests"
+	@echo "  validate-setup - validate the setup of the environment"
+	@echo "  clean - Clean the virtual environment and pre-commit hooks"
+	@echo ""
+	@echo "Usage:"
+	@echo "  make [target]"
+	@echo "Example:"
+	@echo "  make run-checks"

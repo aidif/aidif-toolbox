@@ -6,7 +6,7 @@ repos:
     -   id: mh_style
         name: mh_style
         entry: mh_style
-        args: [--process-slx, --fix, --json=miss_hit_style.json, src]
+        args: [--process-slx, --fix, --html=miss_hit_style.html]
         files: ^(.*\.(m|slx))$
         language: python
         additional_dependencies: [miss_hit_core]
@@ -14,7 +14,7 @@ repos:
     -   id: mh_metric
         name: mh_metric
         entry: mh_metric
-        args: [--ci, src]
+        args: [--ci]
         files: ^(.*\.(m|slx))$
         language: python
         additional_dependencies: [miss_hit_core]
@@ -22,7 +22,7 @@ repos:
     -   id: mh_lint
         name: mh_lint
         entry: mh_lint
-        args: [src]
+        args: [--html=miss_hit_lint.html]
         files: ^(.*\.(m|slx))$
         language: python
         additional_dependencies: [miss_hit]
