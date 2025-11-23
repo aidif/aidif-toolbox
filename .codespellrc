@@ -1,2 +1,2 @@
 [codespell]
-skip = ./docs,./research,./src/AIDIF/examples
+skip = ./research,./src/AIDIF/examples
