@@ -23,5 +23,3 @@ jobs:
 
       - name: Codespell
         uses: codespell-project/actions-codespell@v2
-        with:
-          options: --config .github/workflows/.codespellrc
