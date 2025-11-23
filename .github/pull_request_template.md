@@ -1,5 +1,8 @@
-Merge Review:
+PR Review Checklist:
+
 - [ ] Non QMS task:
+ 
+or
 
 - [ ] QMS task: 
     - [ ] Tests checked
