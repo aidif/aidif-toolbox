@@ -34,44 +34,42 @@ arguments (Output)
     cgmTT timetable
 end
 
-import AIDIF.roundTo5Minutes AIDIF.findGaps
-
-newTimes = roundTo5Minutes(tt.Properties.RowTimes(1),"end"):minutes(5):roundTo5Minutes(tt.Properties.RowTimes(end),"start");
-cgmTT = retime(tt,newTimes,"linear");
-isValid = findGaps(tt.Properties.RowTimes,cgmTT.Properties.RowTimes,minutes(30));
+newTimes = AIDIF.roundTo5Minutes(tt.Properties.RowTimes(1), "end"):minutes(5):AIDIF.roundTo5Minutes(tt.Properties.RowTimes(end), "start");
+cgmTT = retime(tt,newTimes, "linear");
+isValid = AIDIF.findGaps(tt.Properties.RowTimes, cgmTT.Properties.RowTimes, minutes(30), true);
 cgmTT.cgm(~isValid) = NaN;
 end
 
 function validateInputTable(tt)
 
     if ~ismember('cgm', tt.Properties.VariableNames)
-        error(TestHelpers.ERROR_ID_MISSING_COLUMN, "''tt'' must have a ''cgm'' column.");
+        error(AIDIF.Constants.ERROR_ID_MISSING_COLUMN, "''tt'' must have a ''cgm'' column.");
     end
 
     cgm = tt.cgm;
     if ~isnumeric(cgm)
-        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be numeric.");
+        error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be numeric.");
     end
     if any(~isfinite(cgm))
-        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be finite.");
+        error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be finite.");
     end
     if any(cgm < 0)
-        error(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be nonnegative.");
+        error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "''cgm'' must be nonnegative.");
     end
 
     if any(cgm < 40)
-        warning(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "'cgm' contains values less than 40 mg/dL.")
+        warning(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "'cgm' contains values less than 40 mg/dL.")
     end
 
     if any(cgm > 400)
-        warning(TestHelpers.ERROR_ID_INVALID_VALUE_RANGE, "'cgm' contains values greater than 400 mg/dL.")
+        warning(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "'cgm' contains values greater than 400 mg/dL.")
     end
 
     if height(tt) < 2
-        error(TestHelpers.ERROR_ID_INSUFFICIENT_DATA, "''tt'' must contain at least two samples to be resampled.");
+        error(AIDIF.Constants.ERROR_ID_INSUFFICIENT_DATA, "''tt'' must contain at least two samples to be resampled.");
     end
     
     if ~issorted(tt.Properties.RowTimes,"ascend")
-        error(TestHelpers.ERROR_ID_UNSORTED_DATA, "''tt' 'must be sorted ascending by time.");
+        error(AIDIF.Constants.ERROR_ID_UNSORTED_DATA, "''tt' 'must be sorted ascending by time.");
     end
 end
