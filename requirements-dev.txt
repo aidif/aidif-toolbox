@@ -1,5 +1,4 @@
 # This file is used to specify the dependencies for the project development.
 
-miss_hit
-pre-commit
-
+miss_hit      # MATLAB code quality checker
+pre-commit    # Git hooks framework

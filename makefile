@@ -22,7 +22,7 @@ install-requirements: venv
 
 clean-venv:
 	rm -rf $(VENV)
-	@echo "Removed $(VENV)" 
+	@echo "Removed $(VENV)"
 
 run-tests: check-matlab
 	matlab -batch "runTests"
@@ -31,19 +31,19 @@ check-matlab:
 	@command -v matlab >/dev/null 2>&1 || (echo "MATLAB not found in PATH. Please install MATLAB or add it to your PATH." && exit 1)
 
 install-pre-commit:
-	pre-commit install
+	$(VENV_BIN)/pre-commit install
 
 clean-pre-commit:
-	pre-commit uninstall
+	$(VENV_BIN)/pre-commit uninstall
 
 run-pre-commit:
-	pre-commit run --all-files
+	$(VENV_BIN)/pre-commit run --all-files
 
 init: venv activate
 
 install: venv install-requirements install-pre-commit
 
-clean: clean-pre-commit clean-venv 
+clean: clean-pre-commit clean-venv
 
 run: run-pre-commit run-tests
 
