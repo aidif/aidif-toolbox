@@ -21,8 +21,7 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
 
 
     methods (Test)
-
-
+        
         function standardBolusAtMidnight(testCase)
             tt = timetable(testCase.startTime, 5, duration(0,0,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
@@ -88,24 +87,16 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
         end
 
         
-        function standardOverlapsExtended(testCase)
-            tt = timetable(testCase.startTime + minutes([0,16,30]'), [1,1,1]', minutes([30,0,0]'), ...
+        function errorWhenStandardOverlapsExtended(testCase)
+            tt = timetable(testCase.startTime + hours([0,1]'), [1,1]', minutes([90,0]'), ...
                           'VariableNames', {'bolus', 'delivery_duration'});
-            ttResampled = AIDIF.interpolateBolus(tt);
-            
-            TestHelpers.verifyBaseInsulinDeliveryTable(testCase, ttResampled);
-            TestHelpers.verifyTimeAlignmentTest(testCase, ttResampled);
-
-            testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 3, 'AbsTol', 1e-10);
-            testCase.verifyEqual(ttResampled.InsulinDelivery([1:3,5:6]), ones(5,1)*1/6, 'AbsTol', 1e-10);
-            testCase.verifyEqual(ttResampled.InsulinDelivery(4), 1+1/6, 'AbsTol', 1e-10);
-            testCase.verifyEqual(ttResampled.InsulinDelivery(7), 1, 'AbsTol', 1e-10);
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_OVERLAPPING_DELIVERIES);
         end
 
-        function errorWhenExtendedBolusesOverlap(testCase)
+        function errorWhenExtendedOverlapsExtended(testCase)
             tt = timetable(testCase.startTime + hours([0,1]'), [1,1]', minutes([90,10]'), ...
                           'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_OVERLAPPING_DELIVERIES);
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_OVERLAPPING_DELIVERIES);
         end
 
         function extendedBolusSpansCorrectIntervals(testCase)
@@ -122,24 +113,24 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
         function OnDuplicatedEntries(testCase)
             tt = timetable(testCase.startTime + minutes([3,3])', [1, 2]', seconds([0,0])', ...
                           'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_DUPLICATE_TIMESTAMPS);
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS);
         end
 
         function errorOnInvalidBolusValue(testCase)
-            tt = timetable(testCase.startTime, -1, duration(0,0,0), ...
+            tt = timetable(testCase.startTime, 0, duration(0,0,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_VALUE_RANGE);
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE);
         end
 
         function errorOnInvalidDuration(testCase)
-            tt = timetable(testCase.startTime, 1, duration(0,-5,0), ...
+            tt = timetable(testCase.startTime, 5, duration(0,-5,0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_INVALID_VALUE_RANGE);
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE);
         end
 
         function errorOnMissingColumns(testCase)
             tt = timetable(testCase.startTime, 5, 'VariableNames', {'bolus'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), TestHelpers.ERROR_ID_MISSING_COLUMN);
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_MISSING_COLUMN);
         end
     end
 end
