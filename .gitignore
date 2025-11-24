@@ -37,3 +37,6 @@ codegen/
 # Cloud based storage dotfile
 .MATLABDriveTag
 Add-Ons
+research/*.env
+!research/sample.env
+

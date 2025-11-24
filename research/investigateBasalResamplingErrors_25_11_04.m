@@ -1,7 +1,7 @@
 %% create the import query table for babelbetes hive schema
 %assign root folder for babelbetes data partition in rootFolder variable
-rootFolder = "/Users/jan/git/nudgebg/babelbetes/data/out/2025-11-11 - improved basal";
-queryTable = AIDIF.constructHiveQueryTable(rootFolder);
+envVars = loadenv("local.env");
+queryTable = AIDIF.constructHiveQueryTable(envVars("BASAL_RESAMPLING_PATH"));
 fprintf("There are %d rows\n", height(queryTable)) %[output:9f591bc0]
 %%
 

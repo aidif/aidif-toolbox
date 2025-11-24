@@ -3,11 +3,9 @@
 %[text] - cross section of data from each of the **five** studies with largely adult patients (Loop, Replace BG, Flair, IOBP2, and DCLP5)
 %[text] - 20% of patient days for each of the above studies is sufficient \
 %[text] Create query tables for both the raw and combined babelbetes datafiles
-rawPath = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23";
-combinedPath = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/MATLAB/2025-11-18";
-
-rawQuery = AIDIF.constructHiveQueryTable(rawPath);
-finalQuery = AIDIF.constructHiveQueryTable(combinedPath);
+envVars = loadenv("local.env");
+rawQuery = AIDIF.constructHiveQueryTable(envVars("DATA_IMPORT_RAW_PATH"));
+finalQuery = AIDIF.constructHiveQueryTable(envVars("DATA_IMPORT_COMBINED_PATH"));
 %%
 %[text] Use the file query to import the combined data and analyze
 
