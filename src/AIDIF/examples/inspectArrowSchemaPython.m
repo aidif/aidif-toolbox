@@ -37,25 +37,31 @@ code = [
 "import pyarrow.parquet as pq" newline ...
 "schema_arrow = pq.ParquetFile('" + file_path + "').schema_arrow" newline 
 ];
-schema = pyrun(code,'schema_arrow');
-disp(r) %[output:049d0e68]
-unit = string(r.field('delivery_duration').type.unit);
-fprintf("The delivery_duration unit is %s\n", string(unit)); %[output:07b5dc61]
+arrowSchema = pyrun(code,'schema_arrow');
+disp(arrowSchema) %[output:049d0e68]
+unit = string(arrowSchema.field('delivery_duration').type.unit);
+fprintf("The delivery_duration unit is %s\n", string(unit)); %[output:7c1c1fe3]
 %[text] ### Or by calling our python script
-schema = pyrunfile('readParquetArrowSchema.py','schema',path = 'python.parquet');
-unit = string(schema.field('delivery_duration').type.unit);
-fprintf("The delivery_duration unit is %s\n", string(unit)); %[output:173820ad]
+arrowSchema = pyrunfile('readParquetArrowSchema.py','schema',path = 'python.parquet');
+unit = string(arrowSchema.field('delivery_duration').type.unit);
+fprintf("The delivery_duration unit is %s\n", string(unit)); %[output:5cddb43a]
 %[text] ### Now convert the duration
-switch unit %[output:group:43228d72]
+switch unit
     case "ns"
-        base = 1e6 %[output:0d976238]
+        base = 1e6;
     case "ms"
-        base = 1e3
+        base = 1e3;
     otherwise
-        error("Unit not expected")
-end %[output:group:43228d72]
-tt.delivery_duration = milliseconds(tt.delivery_duration/base);
-tt %[output:027b6ef2]
+        error("Unit not expected");
+end
+delivery_duration = milliseconds(tt.delivery_duration/base);
+display(tt) %[output:55ee05d3]
+%%
+%[text] ### Or by calling our convenience function
+base =  AIDIF.readParquetDurationBase('python.parquet','delivery_duration');
+fprintf("Base = %d",base) %[output:20c85e67]
+delivery_duration = milliseconds(tt.delivery_duration/base);
+disp(delivery_duration) %[output:3691a4fe]
 %[text] ### 
 
 %[appendix]{"version":"1.0"}
@@ -67,7 +73,7 @@ tt %[output:027b6ef2]
 %   data: {"dataType":"textualVariable","outputData":{"name":"ans","value":"  <a href=\"matlab:helpPopup('matlab.pyclient.PythonEnvironment')\" style=\"font-weight:bold\">PythonEnvironment<\/a> with properties:\n\n          Version: \"3.11\"\n       Executable: \"\/Users\/jan\/git\/aidif\/aidif-toolbox\/venv\/bin\/python\"\n          Library: \"\/Users\/jan\/.pyenv\/versions\/3.11.0\/lib\/libpython3.11.dylib\"\n             Home: \"\/Users\/jan\/git\/aidif\/aidif-toolbox\/venv\"\n           Status: Loaded\n    ExecutionMode: InProcess\n        ProcessID: \"59632\"\n      ProcessName: \"MATLAB\"\n"}}
 %---
 %[output:2b81f659]
-%   data: {"dataType":"tabular","outputData":{"columnNames":["datetime","bolus","delivery_duration"],"columns":3,"dataTypes":["datetime","double","int64"],"header":"3×3 table","name":"tt","rows":3,"type":"table","value":[["21-Nov-2025 16:21:48","1.2000","1000000000"],["21-Nov-2025 17:21:48","2","120000000000"],["21-Nov-2025 18:21:48","3","10800000000000"]]}}
+%   data: {"dataType":"tabular","outputData":{"columnNames":["datetime","bolus","delivery_duration"],"columns":3,"dataTypes":["datetime","double","int64"],"header":"3×3 table","name":"tt","rows":3,"type":"table","value":[["24-Nov-2025 17:18:34","1.2000","1000000000"],["24-Nov-2025 18:18:34","2","120000000000"],["24-Nov-2025 19:18:34","3","10800000000000"]]}}
 %---
 %[output:9144eb4c]
 %   data: {"dataType":"textualVariable","outputData":{"name":"ans","value":"  <a href=\"matlab:helpPopup('matlab.io.parquet.ParquetInfo')\" style=\"font-weight:bold\">ParquetInfo<\/a> with properties:\n\n               Filename: \"\/Users\/jan\/git\/aidif\/aidif-toolbox\/python.parquet\"\n               FileSize: 2870\n           NumRowGroups: 1\n        RowGroupHeights: 3\n          VariableNames: [\"datetime\"    \"bolus\"    \"delivery_duration\"]\n          VariableTypes: [\"datetime\"    \"double\"    \"int64\"]\n    VariableCompression: [\"snappy\"    \"snappy\"    \"snappy\"]\n       VariableEncoding: [\"dictionary\"    \"dictionary\"    \"dictionary\"]\n                Version: \"2.0\"\n"}}
@@ -75,15 +81,18 @@ tt %[output:027b6ef2]
 %[output:049d0e68]
 %   data: {"dataType":"text","outputData":{"text":"  Python <a href=\"matlab:helpPopup('py.pyarrow.lib.Schema')\" style=\"font-weight:bold\">Schema<\/a> with properties:\n\n           metadata: [1×1 py.dict]\n              names: [1×3 py.list]\n    pandas_metadata: [1×1 py.dict]\n              types: [1×3 py.list]\n\n    datetime: timestamp[ns]\n    bolus: double\n    delivery_duration: duration[ns]\n    -- schema metadata --\n    pandas: '{\"index_columns\": [{\"kind\": \"range\", \"name\": null, \"start\": 0, \"' + 637\n\n","truncated":false}}
 %---
-%[output:07b5dc61]
+%[output:7c1c1fe3]
 %   data: {"dataType":"text","outputData":{"text":"The delivery_duration unit is ns\n","truncated":false}}
 %---
-%[output:173820ad]
+%[output:5cddb43a]
 %   data: {"dataType":"text","outputData":{"text":"The delivery_duration unit is ns\n","truncated":false}}
 %---
-%[output:0d976238]
-%   data: {"dataType":"textualVariable","outputData":{"name":"base","value":"1000000"}}
+%[output:55ee05d3]
+%   data: {"dataType":"tabular","outputData":{"columnNames":["datetime","bolus","delivery_duration"],"columns":3,"dataTypes":["datetime","double","int64"],"header":"3×3 table","name":"tt","rows":3,"type":"table","value":[["24-Nov-2025 17:18:34","1.2000","1000000000"],["24-Nov-2025 18:18:34","2","120000000000"],["24-Nov-2025 19:18:34","3","10800000000000"]]}}
 %---
-%[output:027b6ef2]
-%   data: {"dataType":"tabular","outputData":{"columnNames":["datetime","bolus","delivery_duration"],"columns":3,"dataTypes":["datetime","double","duration"],"header":"3×3 table","name":"tt","rows":3,"type":"table","value":[["21-Nov-2025 16:21:48","1.2000","1 sec"],["21-Nov-2025 17:21:48","2","120 sec"],["21-Nov-2025 18:21:48","3","10800 sec"]]}}
+%[output:20c85e67]
+%   data: {"dataType":"text","outputData":{"text":"Base = 1000000","truncated":false}}
+%---
+%[output:3691a4fe]
+%   data: {"dataType":"text","outputData":{"text":"       1 sec\n     120 sec\n   10800 sec\n\n","truncated":false}}
 %---
