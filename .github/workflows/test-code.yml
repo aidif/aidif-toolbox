@@ -27,6 +27,7 @@ env:
       # Path to directory with (CI) tools or tests. Used for finding unit tests
       TOOLS_DIR: tools
       TESTS_DIR: tests
+      PYTHON_DIR: src/AIDIF/+AIDIF/python
       # Name of MATLAB Release to use for running test suites and code analysis
       MATLAB_RELEASE: latest
       # Whether to cache the MATLAB installation for faster subsequent setups
@@ -48,6 +49,18 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          python -m venv ./venv
+          source ./venv/bin/activate
+          pip install -r $PYTHON_DIR/requirements.txt
+          echo "PYTHON_INTERP=$(pwd)/venv/bin/python" >> $GITHUB_ENV
 
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v2
@@ -55,10 +68,14 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
           cache: ${{ env.CACHE_MATLAB }}
 
+      - name: Try setting up python
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            pyenv("Version", getenv("PYTHON_INTERP"))
+
       - name: Install MatBox
         uses: ehennestad/matbox-actions/install-matbox@v1
-
-
 
       - name: Check Code for MATLAB issues
       # This performs static checks
@@ -81,7 +98,6 @@ jobs:
         with:
             sarif_file: docs/reports/code_issues.sarif
 
-
       
       - name: Run MATLAB test suites
       # This performs unit testing and test coverage using MatBox
@@ -89,9 +105,12 @@ jobs:
         uses: matlab-actions/run-command@v2
         with:
           command: |
+            pyenv("Version", getenv("PYTHON_INTERP"))
             addpath(genpath('${{ env.SRC_DIR }}'));
+            addpath(fullfile('${{ env.PYTHON_DIR }}'));
             addpath(genpath('${{ env.TOOLS_DIR }}'));
             addpath(genpath('${{ env.TESTS_DIR }}'));
+            
             files = dir(fullfile('${{ env.SRC_DIR }}', '**', '*.m'));
             
             disp("All file candidates for testing:")
