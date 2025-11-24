@@ -11,7 +11,7 @@ function validFlags = findGaps(datetimesIrregular, datetimesRegular, maxGap, inc
 %       datetimesRegular   - datetime : array with regularly spaced times
 %       maxGap             - duration : maximum time between consecutive events in datetimesIrregular 
 %                            before the data is considered missing
-%       includeGapStart    - logical : wether to include the start of a gap as valid (default true). 
+%       includeGapStart    - logical : whether to include the start of a gap as valid (default true). 
 %                            When set to true, values matching the start of a gap are kept valid.
 %
 %   Outputs:
