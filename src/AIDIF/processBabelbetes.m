@@ -1,6 +1,6 @@
 % PROCESSBABELBETES this script imports the babelbetes subject data streams
 %   (cgm, basal, and bolus insulin) and time aligns and interpolates the 
-%   data to the requirements specified for RST#1
+%   data.
 %
 %   The output of this script returns combined parquet files to the 
 %   patient folders collected in the data warehouse. The combined datasets
@@ -24,42 +24,48 @@ rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/ba
 queryTable = constructHiveQueryTable(rootFolder);
 
 %% Resample and combine the raw data.
-uniquePatient = findgroups(queryTable(:,["study_name" "patient_id"]));
+
+patientRows = findgroups(queryTable(:,["study_name" "patient_id"]));
 tic
-splitapply(@processPatient,queryTable.study_name, queryTable.patient_id, queryTable.data_type,...
-    queryTable.path,uniquePatient);
+splitapply(@processPatient, queryTable.data_type,queryTable.path,patientRows);
 toc
 
-function processPatient(studyName,patient,dataType,path)
-datasets = cell2table(arrayfun(@(x) parquetread(x,"OutputType","timetable"),path,'UniformOutput',false));
+%Split apply function
+function processPatient(dataType,path)
+datasets = cell2table(arrayfun(@(x) parquetread(x,"OutputType","timetable"),path,'UniformOutput',false),"VariableNames","tt");
 if height(datasets) ~= 3
+    log = "Patient is missing cgm, bolus, or basal data."
+    combinedTT = [];
     return
 end
 
 datasets = cell2table(rowfun(@checkAndFormatTables,datasets,"ExtractCellContents",true,"OutputFormat","cell","NumOutputs",2),"RowNames",dataType,"VariableNames",["tt" "errorLog"]);
-if ~isempty(datasets.errorLog)
+if ~isempty([datasets.errorLog{:}])
     return
 end
 
-parfor i = 1:height(datasets)
-    switch dataType(i)
-        case "cgm"
-            cgmTT = AIDIF.interpolateCGM(datasets.tt{i});
-        case "basal"
-            basalTT = AIDIF.interpolateBasal(datasets.tt{i});
-        case "bolus"
-            bolusTT = AIDIF.interpolateBolus(datasets.tt{i});
+for i = 1:height(datasets)
+    try
+        switch dataType(i)
+            case "cgm"
+                cgmTT = AIDIF.interpolateCGM(datasets.tt{i});
+            case "basal"
+                basalTT = AIDIF.interpolateBasal(datasets.tt{i});
+            case "bolus"
+                bolusTT = AIDIF.interpolateBolus(datasets.tt{i});
+        end
+    catch ME
+        log = ME.message
+        combinedTT = [];
+        return
     end
 end
 combinedTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
 end
 
-
+%helper functions
 function [formattedTable,log] = checkAndFormatTables(rawTT)
-if height(rawTT) < 2
-    warning('table too short')
-    return
-end
+
 rawTT = sortrows(rawTT,"datetime","ascend");
 dups = AIDIF.findDuplicates(rawTT(:,[]));
 rawTT(dups,:) = [];
@@ -67,15 +73,8 @@ rawTT = convertvars(rawTT,1,"double");
 
 if any(ismember(rawTT.Properties.VariableNames,'delivery_duration'))
     rawTT.delivery_duration = seconds(rawTT.delivery_duration);
-    try
-        AIDIF.interpolateBolus(rawTT);
-    catch ME
-        warning('bolus data failed processing')
-        log = 1
-        formattedTable = [];
-        return
-    end
 end
 formattedTable = rawTT;
 log = [];
+
 end
