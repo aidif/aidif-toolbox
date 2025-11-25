@@ -38,3 +38,4 @@ codegen/
 .MATLABDriveTag
 Add-Ons
 venv
+.venv
