@@ -1,6 +1,8 @@
 disp("startup.m...")
 disp("Adding paths.")
-addpath(genpath(pwd));
+addpath(genpath(fullfile(pwd,'src')));
+addpath(genpath(fullfile(pwd,'tests')));
+addpath(genpath(fullfile(pwd,'tools')));
 addpath(fullfile(pwd,'src','AIDIF','+AIDIF','python'));
 
 disp("Setting up python environment...")
