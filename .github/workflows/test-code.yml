@@ -52,12 +52,12 @@ jobs:
           select-by-folder: ${{ env.TESTS_DIR }}
           code-coverage: true
           code-coverage-format: cobertura
-          code-coverage-output-file: ${{ env.REPORTS_DIR }}/cobertura-coverage.xml
+          code-coverage-output-file: ${{ env.REPORTS_DIR }}/codecoverage.xml
 
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: ${{ env.REPORTS_DIR }}/cobertura-coverage.xml
+          filename: ${{ env.REPORTS_DIR }}/codecoverage.xml
           badge: true
           fail_below_min: true
           format: markdown
