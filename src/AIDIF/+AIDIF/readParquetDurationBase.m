@@ -37,8 +37,10 @@ function base = readParquetDurationBase(parquetFilePath, durationColumnName)
     if ~isfile(parquetFilePath)
         error(AIDIF.Constants.ERROR_ID_MISSING_FILE, 'Parquet file %s not found', parquetFilePath);
     end
-
-    arrowSchema = pyrunfile('readParquetArrowSchema.py','schema',path = parquetFilePath);
+    code = ["import pyarrow.parquet as pq" newline ...
+        "p = regex.compile(r'\[(..)\]');" newline ...
+        "schema = pq.ParquetFile(path).schema_arrow;"];
+    arrowSchema = pyrun(code,'schema',path=parquetFilePath);
     field = arrowSchema.field(durationColumnName);
     unit = string(field.type.unit);
     switch unit
