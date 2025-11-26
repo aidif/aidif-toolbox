@@ -1,4 +1,11 @@
-# This file is used to specify the dependencies for the project development.
+# This file specifies the python dependencies
 
+#development
 miss_hit      # MATLAB code quality checker
 pre-commit    # Git hooks framework
+
+#aidif toolbox dependencies
+pandas==2.2.2
+pyarrow==21.0.0
+regex==2024.11.6
+

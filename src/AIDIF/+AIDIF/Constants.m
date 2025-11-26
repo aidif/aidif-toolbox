@@ -5,6 +5,7 @@ classdef Constants
         ERROR_ID_INVALID_DATA_TYPE      = "AIDIF:InvalidInput:InvalidDataType"
         ERROR_ID_INVALID_VALUE_RANGE    = "AIDIF:InvalidInput:InvalidValueRange"
         ERROR_ID_INSUFFICIENT_DATA      = "AIDIF:InvalidInput:InsufficientData"
+        ERROR_ID_MISSING_FILE           = "AIDIF:InvalidInput:MissingFile"
         ERROR_ID_UNSORTED_DATA          = "AIDIF:InvalidInput:Unsorted"
         ERROR_ID_DUPLICATE_TIMESTAMPS   = "AIDIF:InvalidInput:DuplicatedValues"
         ERROR_ID_INVALID_PATH_FORMAT    = "AIDIF:InvalidInput:InvalidPathFormat"
