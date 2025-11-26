@@ -36,4 +36,12 @@ codegen/
 
 # Cloud based storage dotfile
 .MATLABDriveTag
+
+#Other Matlab Toolboxes
 Add-Ons
+
+#Miss-Hit Config
+miss_hit_*.html
+
+#Python Virtual Environments
+.venv
