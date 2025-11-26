@@ -56,27 +56,43 @@ end
 
 function validateBolusTable(tt)
     if ~all(ismember(["bolus", "delivery_duration"], tt.Properties.VariableNames))
-        error(AIDIF.Constants.ERROR_ID_MISSING_COLUMN, "Timetable must have a ''bolus'' and ''delivery_duration'' column.");
+        error(AIDIF.Constants.ERROR_ID_MISSING_COLUMN, ...
+            "Timetable must have a ''bolus'' and ''delivery_duration'' column.");
     end
 
     bolus = tt.bolus;
     if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus < 0)
-        error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "''bolus'' column must contain finite, positive values.");
+        error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, ...
+            "''bolus'' column must contain finite, positive values.");
     end
     
     duration = tt.delivery_duration;
     if ~isduration(duration) || any(duration<0)
-        error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "'duration' column must contain positive durations.");
+        error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, ...
+            "'duration' column must contain positive durations.");
     end
     
     if ~issorted(tt.Properties.RowTimes, "ascend")
-        error(AIDIF.Constants.ERROR_ID_UNSORTED_DATA, "Timetable must be sorted ascending by time.");
+        error(AIDIF.Constants.ERROR_ID_UNSORTED_DATA, ...
+            "Timetable must be sorted ascending by time.");
     end
     
-    bDuplicated = AIDIF.findDuplicates(tt(:,[]));
-    if sum(bDuplicated)>0
-        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable has %d rows with duplicated datetimes",num2str(sum(bDuplicated)))
+    extendedTimes = tt(tt.delivery_duration>seconds(0),[]);
+    bDuplicatedExtended = AIDIF.findDuplicates(extendedTimes);
+    if sum(bDuplicatedExtended)>0
+        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, ...
+            "Timetable has %s extended boluses with duplicated datetimes", ...
+            num2str(sum(bDuplicatedExtended)))
     end
+    
+    standardTimes = tt(tt.delivery_duration==seconds(0),[]);
+    bDuplicatedStandard = AIDIF.findDuplicates(standardTimes);
+    if sum(bDuplicatedStandard)>0
+        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, ...
+            "Timetable has %s standard boluses with duplicated datetimes", ...
+            num2str(sum(bDuplicatedStandard)))
+    end
+
 end
 
 function validateExtendedDontOverlap(tt)
