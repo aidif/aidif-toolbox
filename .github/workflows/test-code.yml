@@ -50,9 +50,7 @@ jobs:
         with:
           source-folder: ${{ env.SRC_DIR }}
           select-by-folder: ${{ env.TESTS_DIR }}
-          code-coverage: true
-          code-coverage-format: cobertura
-          code-coverage-output-file: ${{ env.REPORTS_DIR }}/codecoverage.xml
+          code-coverage-cobertura: ${{ env.REPORTS_DIR }}/codecoverage.xml
 
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
