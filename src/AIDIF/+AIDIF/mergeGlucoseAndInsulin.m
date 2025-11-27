@@ -1,21 +1,19 @@
-function combinedTT = mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT)
+function combinedTT = mergeGlucoseAndInsulin(cgmTT,totalInsulinTT)
 % MERGEGLUCOSEANDINSULIN merge resampled glucose, bolus, and basal
 % timetables into one timetable
 %
 %   INPUTS:
 %   cgmTT: cgm timetable, resampled to 5 minute intervals and aligned on the hour.
 %       (`cgm` - double column of interpolated glucose values (mg/dL))
-%   basalTT: basal insulin timetable, resampled to 5 minute intervals and aligned on the hour.
-%       (`InsulinDelivery`: insulin delivered each interval (U))
-%   bolusTT: bolus timetable, resampled to 5 minute intervals and aligned on the hour.
-%        (`InsulinDelivery`: insulin amount (U) delivered each interval (U))
+%   totalInsulinTT: timetable of the total insulin delivery, resampled to 5 minute intervals and aligned on the hour.
+%       (`totalInsulin`: insulin delivered each interval (U))
 %
 %   OUTPUTS: 
 %   combinedTT: timetable containing the egv glucose values from cgmTT, alongside the aggregated glucose delivery values
 %       from basalTT and bolusTT.
 %           (`egv` - estimated glucose value(mg/dL) from cgmTT.
 %           (`totalInsulin` - total insulin from the combined insulin deliveries of basalTT and bolusTT for each 
-%               time interval. totalInsulin is NaN if either BasalTT or bolusTT is NaN for a given interval.
+%               time interval.
 %
 %   See also interpolateBasal, interpolateBolus, interpolateCGM
 
@@ -31,23 +29,15 @@ function combinedTT = mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT)
 
 arguments (Input)
     cgmTT timetable {mustBeRegular,mustBeHourAligned}
-    basalTT timetable {mustBeRegular,mustBeHourAligned}
-    bolusTT timetable {mustBeRegular,mustBeHourAligned}
+    totalInsulinTT timetable {mustBeRegular,mustBeHourAligned}
 end
 
 arguments (Output)
     combinedTT timetable
 end
 
-% Combine Insulin. Clip data to within viable basal range
-mergedInsulin = synchronize(basalTT,bolusTT,"first",'fillwithmissing');
-bolusMatch = ismember(basalTT.Properties.RowTimes,bolusTT.Properties.RowTimes);
-mergedInsulin{~bolusMatch,2} = 0;
-mergedInsulin{:,"totalInsulin"} = mergedInsulin{:,1} + mergedInsulin{:,2};
-mergedInsulin = removevars(mergedInsulin,[1 2]);
-
 % Add egv data. clip data to the common range of data
-combinedTT = synchronize(cgmTT,mergedInsulin,'intersection','fillwithmissing');
+combinedTT = synchronize(cgmTT,totalInsulinTT,'intersection','fillwithmissing');
 combinedTT = renamevars(combinedTT,"cgm","egv");
 
 end
