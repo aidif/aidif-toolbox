@@ -16,65 +16,80 @@
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
-import AIDIF.*
-
-%% create the import query table for babelbetes hive schema
-%assign root folder for babelbetes data partition in rootFolder variable
-rootFolder = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/babelbetes output/2025-09-23";
-queryTable = constructHiveQueryTable(rootFolder);
+% create the import query table for babelbetes hive schema
+rootFolder = "I:\Shared drives\AIDIF internal\03 Model Development\BabelBetes\babelbetes output\2025-11-26 - e2d9611";
+queryTable = AIDIF.constructHiveQueryTable(rootFolder);
 
 %% Resample and combine the raw data.
+[patientRows,patients] = findgroups(queryTable(:,["study_name" "patient_id"]));
 
-patientRows = findgroups(queryTable(:,["study_name" "patient_id"]));
 tic
-splitapply(@processPatient, queryTable.data_type,queryTable.path,patientRows);
+[patients{:,"combinedTT"}, patients{:,"errorLog"}] = splitapply(@(x,y)processPatient(x,y), queryTable.data_type,queryTable.path,patientRows);
 toc
 
-%Split apply function
-function processPatient(dataType,path)
-datasets = cell2table(arrayfun(@(x) parquetread(x,"OutputType","timetable"),path,'UniformOutput',false),"VariableNames","tt");
+
+function [combinedTT,errorLog] = processPatient(dataType,dataPath)
+datasets = cell2table(arrayfun(@(x) parquetread(x,"OutputType","timetable"),dataPath,'UniformOutput',false),'RowNames',dataType,"VariableNames","tt");
+errorLog = createLogTemplate();
 if height(datasets) ~= 3
-    log = "Patient is missing cgm, bolus, or basal data."
-    combinedTT = [];
+    errorLog.isMissingData = 1;
+    errorLog = {errorLog};
+    combinedTT = {[]};
     return
 end
 
-datasets = cell2table(rowfun(@checkAndFormatTables,datasets,"ExtractCellContents",true,"OutputFormat","cell","NumOutputs",2),"RowNames",dataType,"VariableNames",["tt" "errorLog"]);
-if ~isempty([datasets.errorLog{:}])
+datasets = cell2table(rowfun(@(x) checkAndFormatTables(x,errorLog),datasets,"ExtractCellContents",true,"OutputFormat","cell","NumOutputs",2),"RowNames",dataType,"VariableNames",["tt" "errorLog"]);
+errorLog = [datasets.errorLog(:)];
+
+base = AIDIF.readParquetDurationBase(dataPath(contains(dataPath,'bolus')),"delivery_duration");
+bolusTT = datasets.tt{datasets.Row("bolus")};
+bolusTT.delivery_duration = milliseconds(bolusTT.delivery_duration/base);
+
+try
+    cgmTT = AIDIF.interpolateCGM(datasets.tt{datasets.Row("cgm")});
+    totalInsulinTT = AIDIF.mergeTotalInsulin(datasets.tt{datasets.Row("basal")},bolusTT,hours(24));
+catch ME
+    disp(ME.message)
+    errorLog(end).errorID = ME.identifier;
+    errorLog(end).errorMessage = ME.message;
+    errorLog = {errorLog};
+    combinedTT = {[]};
     return
 end
 
-for i = 1:height(datasets)
-    try
-        switch dataType(i)
-            case "cgm"
-                cgmTT = AIDIF.interpolateCGM(datasets.tt{i});
-            case "basal"
-                basalTT = AIDIF.interpolateBasal(datasets.tt{i});
-            case "bolus"
-                bolusTT = AIDIF.interpolateBolus(datasets.tt{i});
-        end
-    catch ME
-        log = ME.message
-        combinedTT = [];
-        return
-    end
-end
-combinedTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+errorLog(1).isComplete = 1;
+errorLog = {errorLog};
+combinedTT = {AIDIF.mergeGlucoseAndInsulin(cgmTT,totalInsulinTT)};
+
 end
 
 %helper functions
-function [formattedTable,log] = checkAndFormatTables(rawTT)
+function [formattedTable,errorLog] = checkAndFormatTables(rawTT,errorLog)
 
-rawTT = sortrows(rawTT,"datetime","ascend");
+if ~issortedrows(rawTT)
+    disp("unsorted")
+    errorLog.sorted = 0;
+    rawTT = sortrows(rawTT,"datetime","ascend");
+end
+
 dups = AIDIF.findDuplicates(rawTT(:,[]));
-rawTT(dups,:) = [];
+if any(dups) && width(rawTT) == 1
+    disp('duplicates')
+    errorLog.hasDuplicates = 1;
+    rawTT(dups,:) = [];
+end
+
 rawTT = convertvars(rawTT,1,"double");
 
-if any(ismember(rawTT.Properties.VariableNames,'delivery_duration'))
-    rawTT.delivery_duration = seconds(rawTT.delivery_duration);
-end
 formattedTable = rawTT;
-log = [];
 
+end
+
+function templateLog = createLogTemplate()
+    templateLog = struct("isComplete", 0, ...
+        "isMissingData", 0, ...
+        "sorted", 1, ...
+        "hasDuplicates", 0, ...
+        "errorID", "", ...
+        "errorMessage", "");
 end
