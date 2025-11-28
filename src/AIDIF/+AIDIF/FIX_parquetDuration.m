@@ -1,11 +1,13 @@
 function base = FIX_parquetDuration(parquetFilePath, durationColumnName)
-% READPARQUETDURATIONUNIT Reads the duration columns unit and provides the base factor to convert to milliseconds
+% FIX_PARQUETDURATION Reads the duration columns unit and provides the base factor to convert to milliseconds
 %   base = readParquetDurationUnit(parquetFilePath, durationColumnName)
 %
 %   This function uses Python's pyarrow library to read the arrow schema
-%   from a parquet file and extract the duration unit for a specified column.
-%   This is necessary because MATLAB's parquetread function doesn't properly
-%   handle duration types and treats them as int64.
+%   from a parquet file and extract the duration unit for a specified
+%   column. It then returns the base value to convert the duration value to
+%   milliseconds. This is necessary because MATLAB's parquetread function doesn't properly
+%   handle duration types and treats them as int64 regardless of wether
+%   these represent microseconds or nanoseconds.
 %
 %   Inputs:
 %     parquetFilePath - string or char array, path to the parquet file
