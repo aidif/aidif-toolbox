@@ -8,7 +8,7 @@
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
-classdef readParquetDurationBaseTest < matlab.unittest.TestCase
+classdef FIX_parquetDurationTest < matlab.unittest.TestCase
     properties
         tempDir
         parquetFile
@@ -52,7 +52,7 @@ classdef readParquetDurationBaseTest < matlab.unittest.TestCase
     
     methods(Test)
         function testRestoreDurations(testCase)
-            base = AIDIF.readParquetDurationBase(testCase.parquetFile,'delivery_duration');
+            base = AIDIF.FIX_parquetDuration(testCase.parquetFile,'delivery_duration');
             tt = parquetread(testCase.parquetFile);
             tt.delivery_duration = milliseconds(tt.delivery_duration/base);
             testCase.verifyEqual(tt.delivery_duration,[seconds(1),minutes(2),hours(3)]')

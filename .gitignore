@@ -40,8 +40,8 @@ codegen/
 #Matlab Toolboxes like Matbox
 Add-Ons
 
-#Miss-Hit Config
-miss_hit_*.html
-
 #Python Virtual Environments
 .venv
+
+#Mishit output
+miss_hit_*.html
