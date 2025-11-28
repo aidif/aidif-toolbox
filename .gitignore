@@ -41,7 +41,6 @@ codegen/
 Add-Ons
 
 #Python Virtual Environments
-venv
 .venv
 
 #Mishit output

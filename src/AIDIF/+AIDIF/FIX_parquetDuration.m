@@ -1,4 +1,4 @@
-function base = readParquetDurationBase(parquetFilePath, durationColumnName)
+function base = FIX_parquetDuration(parquetFilePath, durationColumnName)
 % READPARQUETDURATIONUNIT Reads the duration columns unit and provides the base factor to convert to milliseconds
 %   base = readParquetDurationUnit(parquetFilePath, durationColumnName)
 %
