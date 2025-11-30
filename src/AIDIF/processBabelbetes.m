@@ -16,113 +16,84 @@
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
-% create the import query table for babelbetes hive schema
-rootFolder = "I:\Shared drives\AIDIF internal\03 Model Development\BabelBetes\babelbetes output\2025-11-26 - e2d9611";
-exportRoot = "I:/Shared drives/AIDIF internal/03 Model Development/BabelBetes/MATLAB/" +string(datetime("today","Format","uuuu-MM-dd"));
-queryTable = AIDIF.constructHiveQueryTable(rootFolder);
+function results = processBabelbetes(rootFolder)
+    queryTable = AIDIF.constructHiveQueryTable(rootFolder);
+    queryTable = queryTable(queryTable.study_name=='Flair'& ismember(queryTable.patient_id,["1","10","89"]),:);
+    
+    [patientRows, patients] = findgroups(queryTable(:,["study_name" "patient_id"]));
+    results = patients;
+    tic
+    [results.combinedTT, results.errorLog] = splitapply(@(x,y) processPatient(x,y), queryTable.data_type, queryTable.path,patientRows);
+    toc
 
-%% Resample and combine the raw data.
-[patientRows,patients] = findgroups(queryTable(:,["study_name" "patient_id"]));
-
-tic
-[patients{:,"combinedTT"}, patients{:,"errorLog"}] = splitapply(@(x,y)processPatient(x,y), queryTable.data_type,queryTable.path,patientRows);
-rowfun(@(x,y,z) exportData(x,y,z,exportRoot),patients,"InputVariables",["combinedTT" "study_name" "patient_id"],"SeparateInputs",true,"ExtractCellContents",true)
-toc
-
-function [combinedTT,errorLog] = processPatient(dataType,dataPath)
-%processPatients compiles patient data into final timetable output.
-%   Inputs:
-%   dataType - string array of the datatypes, relating to the file contents
-%       of dataPath
-%   dataPath - array of file paths for parquet files to be processed.
-%
-%   Outputs:
-%   combinedTT - cumulative timetable for one patient.
-%       'egv' - estimated glucose values (mg/dL)
-%       'totalInsulin' - combined insulin delivery from bolus and basal
-%       datasets.
-%   errorLog - table of logical and string variables indicating caught and
-%   hotfixed errors.
-%
-%   see also checkAndFormatTables, createLogTemplate
-errorLog = createLogTemplate();
-if height(dataPath) ~= 3
-    errorLog.isMissingData = 1;
-    errorLog = {errorLog};
-    combinedTT = {[]};
-    return
-end
-datasets = cell2table(arrayfun(@(x) parquetread(x,"OutputType","timetable"),dataPath,'UniformOutput',false),'RowNames',dataType,"VariableNames","tt");
-
-datasets = cell2table(rowfun(@(x) checkAndFormatTables(x,errorLog),datasets,"ExtractCellContents",true,"OutputFormat","cell","NumOutputs",2),"RowNames",dataType,"VariableNames",["tt" "errorLog"]);
-errorLog = [datasets.errorLog(:)];
-
-%bolus duration schema correction
-base = AIDIF.readParquetDurationBase(dataPath(contains(dataPath,'bolus')),"delivery_duration");
-bolusTT = datasets.tt{datasets.Row("bolus")};
-bolusTT.delivery_duration = milliseconds(bolusTT.delivery_duration/base);
-
-try
-    cgmTT = AIDIF.interpolateCGM(datasets.tt{datasets.Row("cgm")});
-    totalInsulinTT = AIDIF.mergeTotalInsulin(datasets.tt{datasets.Row("basal")},bolusTT,hours(24));
-catch ME
-    disp(ME.message)
-    % errorLog{end,["errorID" "errorMessage"]} = [ME.identifierer ME.message];
-    errorLog = {errorLog};
-    combinedTT = {[]};
-    return
+    report(results.errorLog)
 end
 
-errorLog(1).isComplete = 1;
-errorLog = {errorLog};
-combinedTT = {AIDIF.mergeGlucoseAndInsulin(cgmTT,totalInsulinTT)};
+function [combinedTT,result] = processPatient(dataType,dataPath)
+    result = createLogTemplate;
+    try
+        assert(length(dataType)==3,AIDIF.Constants.ERROR_ID_MISSING_FILE,"Missing files for at least one data type");
+    
+        datapaths = dictionary(dataType, dataPath);
+    
+        datasets = dictionary(dataType, arrayfun(@(x) parquetread(x,"OutputType","timetable"),dataPath,UniformOutput=false));
+        [datasets(dataType), wasSorted, hadDuplicates] = cellfun(@(x) checkAndFormatTables(x), datasets.values,UniformOutput=false);
+        result.sorted = cell2struct(wasSorted, dataType);
+        result.duplicated = cell2struct(hadDuplicates, dataType);
+
+        base = AIDIF.FIX_parquetDuration(datapaths("bolus"), "delivery_duration");
+        datasets{"bolus"}.delivery_duration = milliseconds(datasets{"bolus"}.delivery_duration/base);
+        datasets{"cgm"} = AIDIF.interpolateCGM(datasets{"cgm"});
+        datasets{"totalInsulin"} = AIDIF.mergeTotalInsulin(datasets{"basal"}, datasets{"bolus"}, hours(24));
+
+        combinedTT = {AIDIF.mergeGlucoseAndInsulin(datasets{"cgm"},datasets{"totalInsulin"})};
+    catch ME
+        result.errorID = ME.identifier;
+        result.errorMessage = ME.message;
+        combinedTT = {[]};
+    end
 end
 
-function done = exportData(combinedTT,studyName,patientID,exportRoot)
-%exportData exports combined datasets as parquet files in a hive schema
-%folder structure.
-if isempty(combinedTT)
-    done = 0;
-    return
-end
-filePath = fullfile(exportRoot,"study_name=" + studyName,"data_type=combined",...
-    "patient_id="+patientID);
-mkdir(filePath)
-parquetwrite(filePath+"\babelbetes_combined.parquet",combinedTT)
-done = 1;
-end
+function [formattedTable, wasSorted, hadDuplicates] = checkAndFormatTables(rawTT)
+    wasSorted = true;
+    hadDuplicates = false;
 
-%% helper functions
-
-function [formattedTable,errorLog] = checkAndFormatTables(rawTT,errorLog)
-%checkAndFormatTables check for, log and correct minor discrepencies of timetables.
-%   This function sorts, removes duplicates of egv and basal, and converts
-%   table variable types to allow data to pass that would otherwise fail.
-if ~issortedrows(rawTT)
-    disp("unsorted")
-    errorLog.sorted = 0;
-    rawTT = sortrows(rawTT,"datetime","ascend");
-end
-
-dups = AIDIF.findDuplicates(rawTT(:,[]));
-% not checking for duplicates in bolus here
-if any(dups) && width(rawTT) == 1
-    disp('duplicates')
-    errorLog.hasDuplicates = 1;
-    rawTT(dups,:) = [];
-end
-
-rawTT = convertvars(rawTT,1,"double");
-formattedTable = rawTT;
+    if ~issortedrows(rawTT)
+        wasSorted = false;
+        rawTT = sortrows(rawTT,"datetime","ascend");
+    end
+    
+    dups = AIDIF.findDuplicates(rawTT(:,[]));
+    if any(dups) && width(rawTT) == 1
+        hadDuplicates = true;
+        rawTT(dups,:) = [];
+    end
+    
+    formattedTable = convertvars(rawTT,1,"double");
 end
 
 function templateLog = createLogTemplate()
-%createLogTemplate creates error log template for processBabelbetes.
-    templateLog = struct("isComplete", 0, ...
-        "isMissingData", 0, ...
-        "sorted", 1, ...
-        "hasDuplicates", 0, ...
+    templateLog = struct("sorted", struct, ...
+        "duplicated", struct, ...
         "errorID", "", ...
         "errorMessage", "");
 end
 
+function report(errorLog)
+    hasValidDuplicated = arrayfun(@(x) ~isempty(fields(x.duplicated)), errorLog); 
+    validLogs = errorLog(hasValidDuplicated);
+    basalDuplicated = sum(arrayfun(@(x) x.duplicated.basal, validLogs))
+    cgmDuplicated = sum(arrayfun(@(x) x.duplicated.cgm, validLogs))
+    bolusDuplicated = sum(arrayfun(@(x) x.duplicated.bolus, validLogs))
+    
+    hasValidSorted = arrayfun(@(x) ~isempty(fields(x.sorted)), errorLog); 
+    validLogs = errorLog(hasValidSorted);
+    basalUnsorted = sum(arrayfun(@(x) ~x.sorted.basal, validLogs))
+    cgmUnsorted = sum(arrayfun(@(x) ~x.sorted.cgm, validLogs))
+    bolusUnsorted = sum(arrayfun(@(x) ~x.sorted.bolus, validLogs))
+    
+    
+    errorIDs = arrayfun(@(x) string(x.errorID), errorLog);
+    errorIDs(strlength(errorIDs) == 0)="success";
+    [cnts,grps] = groupcounts(errorIDs)
+end

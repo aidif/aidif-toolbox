@@ -44,13 +44,13 @@ end
 
 function mustBeRegular(tt)
 if any(diff(tt.Properties.RowTimes)~= minutes(5))
-    error(TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE,"timetable is not regular at 5 minute intervals.")
+    error(AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE,"timetable is not regular at 5 minute intervals.")
 end
 end
 
 function mustBeHourAligned(tt)
 time = tt.Properties.RowTimes;
 if ~all(ismember(minute(time),0:5:55)) || any(second(time))
-    error(TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE,"timetable is not aligned to the hour.")
+    error(AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE,"timetable is not aligned to the hour.")
 end
 end
