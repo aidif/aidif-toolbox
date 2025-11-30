@@ -12,166 +12,87 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
     methods (Test)
 
         function mergeEqualTables(testCase)
-            basalTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([0 5 10])', [0 1 1]', ...
-                'VariableNames',"InsulinDelivery");
+            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
+                'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
                 'VariableNames',"cgm");
 
-            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', [1 2 2]', ...
+            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', [1 1 1]', ...
                 'VariableNames',["egv", "totalInsulin"]);
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
-        function basalNanValuesPreserved(testCase)
-            basalTT = timetable(datetime("today") + minutes([0 5 10])', [1 NaN 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([0 5 10])', [0 1 1]', ...
-                'VariableNames',"InsulinDelivery");
+        function insulinNanValuesPreserved(testCase)
+            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 NaN 1]', ...
+                'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
                 'VariableNames',"cgm");
 
-            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', [1 NaN 2]', ...
+            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', [1 NaN 1]', ...
                 'VariableNames',["egv", "totalInsulin"]);
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
-            verifyEqual(testCase,actualTT,expectedTT);
-        end
-
-        function bolusNanValuesPreserved(testCase)
-            basalTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([0 5 10])', [0 NaN 1]', ...
-                'VariableNames',"InsulinDelivery");
-            cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
-                'VariableNames',"cgm");
-
-            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', [1 NaN 2]', ...
-                'VariableNames',["egv", "totalInsulin"]);
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
         function cgmNanValuesPreserved(testCase)
-            basalTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([0 5 10])', [0 1 1]', ...
-                'VariableNames',"InsulinDelivery");
+            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
+                'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 NaN 100]', ...
                 'VariableNames',"cgm");
 
-            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 NaN 100]', [1 2 2]', ...
+            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 NaN 100]', [1 1 1]', ...
                 'VariableNames',["egv", "totalInsulin"]);
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
-        function basalBeyondBolusIsPreserved(testCase)
-            basalTT = timetable(datetime("today") + minutes([0 5 10 15 20])', [1 1 1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([5 10 15])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            cgmTT = timetable(datetime("today") + minutes([0 5 10 15 20])', [100 100 100 100 100]', ...
+        function combinedTableLimitsToIntersection(testCase)
+            insulinTT = timetable(datetime("today") + minutes([0 5 10 15 20])', [1 1 1 1 1]', ...
+                'VariableNames',"totalInsulin");
+            cgmTT = timetable(datetime("today") + minutes([10 15 20 25 30])', [100 100 100 100 100]', ...
                 'VariableNames',"cgm");
 
-            expectedTT = timetable(datetime("today") + minutes([0 5 10 15 20])', [100 100 100 100 100]', ...
-                [1 2 2 2 1]', 'VariableNames',["egv", "totalInsulin"]);
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
-            verifyEqual(testCase,actualTT,expectedTT);
-        end
-
-        function bolusBeyondBasalIsClipped(testCase)
-            basalTT = timetable(datetime("today") + minutes([5 10 15])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([0 5 10 15 20])', [1 1 1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            cgmTT = timetable(datetime("today") + minutes([5 10 15])', [100 100 100]', ...
-                'VariableNames',"cgm");
-
-            expectedTT = timetable(datetime("today") + minutes([5 10 15])', [100 100 100]', ...
-                [2 2 2]', 'VariableNames',["egv", "totalInsulin"]);
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
-            verifyEqual(testCase,actualTT,expectedTT);
-        end
-
-        function cgmBeyondbasalIsClipped(testCase)
-            basalTT = timetable(datetime("today") + minutes([5 10 15])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([5 10 15])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            cgmTT = timetable(datetime("today") + minutes([0 5 10 15 20])', [100 100 100 100 100]', ...
-                'VariableNames',"cgm");
-
-            expectedTT = timetable(datetime("today") + minutes([5 10 15])', [100 100 100]', ...
-                [2 2 2]', 'VariableNames',["egv", "totalInsulin"]);
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
-            verifyEqual(testCase,actualTT,expectedTT);
-        end
-
-        function basalBeyondCGMIsClipped(testCase)
-            basalTT = timetable(datetime("today") + minutes([0 5 10 15 20])', [1 1 1 1 1 ]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([5 10 15])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            cgmTT = timetable(datetime("today") + minutes([5 10 15])', [100 100 100]', ...
-                'VariableNames',"cgm");
-
-            expectedTT = timetable(datetime("today") + minutes([5 10 15])', [100 100 100]', ...
-                [2 2 2]', 'VariableNames',["egv", "totalInsulin"]);
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,bolusTT);
+            expectedTT = timetable(datetime("today") + minutes([10 15 20])', [100 100 100]', ...
+                [1 1 1]', 'VariableNames',["egv", "totalInsulin"]);
+            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
         function errorOnIrregularTimes(testCase)
-            basalTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([0 5 10])', [0 1 1]', ...
-                'VariableNames',"InsulinDelivery");
+            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
+                'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
                 'VariableNames',"cgm");
 
-            % check basal
-            irregularBasal = basalTT([1 3],:);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,irregularBasal,bolusTT), ...
-                TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE)
-
-            % check bolus
-            irregularBolus = bolusTT([1 3],:);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,irregularBolus), ...
-                TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE)
+            % check insulin
+            irregularInsulin = insulinTT([1 3],:);
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,irregularInsulin), ...
+                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
 
             % check cgm
             irregularCGM = cgmTT([1 3],:);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(irregularCGM,basalTT,bolusTT), ...
-                TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE)
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(irregularCGM,insulinTT), ...
+                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
         end
 
         function errorWhenNotAlignedOnHour(testCase)
-            basalTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"InsulinDelivery");
-            bolusTT = timetable(datetime("today") + minutes([0 5 10])', [0 1 1]', ...
-                'VariableNames',"InsulinDelivery");
+            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
+                'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
                 'VariableNames',"cgm");
 
-            % check basal
-            unalignedBasal = basalTT;
-            unalignedBasal.Properties.RowTimes = unalignedBasal.Properties.RowTimes + seconds(2.5);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,unalignedBasal,bolusTT), ...
-                TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE)
-
-            % check bolus
-            unalignedBolus = bolusTT;
-            unalignedBolus.Properties.RowTimes = unalignedBolus.Properties.RowTimes + minutes(2);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,basalTT,unalignedBolus), ...
-                TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE)
+            % check insulin
+            unalignedInsulin = insulinTT;
+            unalignedInsulin.Properties.RowTimes = unalignedInsulin.Properties.RowTimes + seconds(2.5);
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,unalignedInsulin), ...
+                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
 
             % check cgm
             unalignedCGM = cgmTT;
             unalignedCGM.Properties.RowTimes = unalignedCGM.Properties.RowTimes + minutes(2);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(unalignedCGM,basalTT,bolusTT), ...
-                TestHelpers.ERROR_ID_INCONSISTENT_STRUCTURE)
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(unalignedCGM,insulinTT), ...
+                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
         end
     end
 

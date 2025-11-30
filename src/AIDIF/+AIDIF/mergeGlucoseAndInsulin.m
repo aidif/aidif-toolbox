@@ -1,6 +1,5 @@
 function combinedTT = mergeGlucoseAndInsulin(cgmTT,totalInsulinTT)
-% MERGEGLUCOSEANDINSULIN merge resampled glucose, bolus, and basal
-% timetables into one timetable
+% MERGEGLUCOSEANDINSULIN merge total insulin and resampled CGM timetables.
 %
 %   INPUTS:
 %   cgmTT: cgm timetable, resampled to 5 minute intervals and aligned on the hour.
@@ -9,13 +8,13 @@ function combinedTT = mergeGlucoseAndInsulin(cgmTT,totalInsulinTT)
 %       (`totalInsulin`: insulin delivered each interval (U))
 %
 %   OUTPUTS: 
-%   combinedTT: timetable containing the egv glucose values from cgmTT, alongside the aggregated glucose delivery values
-%       from basalTT and bolusTT.
+%   combinedTT: timetable containing the egv glucose values from cgmTT, alongside the aggregated insulin delivery values
+%       from totalInsulinTT. combinedTT returns only the intersection of rows between cgmTT and totalInsulinTT.
 %           (`egv` - estimated glucose value(mg/dL) from cgmTT.
-%           (`totalInsulin` - total insulin from the combined insulin deliveries of basalTT and bolusTT for each 
-%               time interval.
+%           (`totalInsulin` - total insulin from the combined basal and
+%           bolus deliveries (U) for each time interval.)
 %
-%   See also interpolateBasal, interpolateBolus, interpolateCGM
+%   See also mergeTotalInsulin, interpolateCGM
 
 %   Author: Michael Wheelock
 %   Date: 2025-11-13
