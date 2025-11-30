@@ -1,16 +1,24 @@
 function mergedInsulin = mergeTotalInsulin(basalIrregular,bolusIrregular,maxGap)
 % MERGETOTALINSULIN combine basal and bolus insuling into total insulin
-%   delivery
+%   delivery.
 %
 %   INPUTS:
-%   basalIrregular: description of inputArg1 argument. If the descsription goes
-%       beyond 1 line, indent the following lines
-%   bolusIrregular: description of inputArg2 argument.
-%   maxGap: description of inputArg2 argument.
+%     basalIrregular - timetable of irregular spaced basal rate events:
+%        (`basal_rate` column holding basal rate in U/hr)
+%     bolusIrregular - timetable of irregular spaced bolus events:
+%        (`bolus` - float column holding the bolus dose (U of insulin) delivered)
+%        (`delivery_duration` - duration of delivery (>0 for extended boluses, 0 indicates standard bolus)
+%     maxGap - duration : maximum time between consecutive events in basalIrregular and bolusIrregular timetables 
+%        before the data is considered missing
 %
 %   OUTPUTS: 
-%   mergedInsulin: description of outputArg1 argument. If the descsription 
-%       goes beyond line 1, indent the following lines.
+%   mergedInsulin: regular timetable of aggregated insulin deliver, sampled
+%       at 5 minute intervals on the hour. mergedInsulin is contained
+%       within the start and endpoints of basalIrregular. Assigned NaN
+%       values within basalIrregular and bolusIrregular are conserved in
+%       mergedInsulin.
+%           (`totalInsulin` - combined basal and bolus insulin delivery (U) for
+%           each 5 minute interval.)
 %
 %   See also interpolateBasal, interpolateBolus, mergeGlucoseAndInsulin
 
