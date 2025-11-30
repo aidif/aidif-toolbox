@@ -16,7 +16,13 @@
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
-function results = processBabelbetes(rootFolder)
+function results = processBabelbetes(rootFolder,exportRoot)
+
+arguments (Input)
+    rootFolder char {mustBeTextScalar}
+    exportRoot char {mustBeTextScalar} = ""
+end
+
     queryTable = AIDIF.constructHiveQueryTable(rootFolder);
     queryTable = queryTable(queryTable.study_name=='Flair'& ismember(queryTable.patient_id,["1","10","89"]),:);
     
@@ -25,6 +31,11 @@ function results = processBabelbetes(rootFolder)
     tic
     [results.combinedTT, results.errorLog] = splitapply(@(x,y) processPatient(x,y), queryTable.data_type, queryTable.path,patientRows);
     toc
+
+    if strlength(exportRoot) ~= 0
+        rowfun(@(x,y,z) exportData(x,y,z,exportRoot),results,"InputVariables",["combinedTT" "study_name" "patient_id"],"SeparateInputs",true,"ExtractCellContents",true);
+        disp("data exported to " + exportRoot);
+    end
 
     report(results.errorLog)
 end
@@ -96,4 +107,18 @@ function report(errorLog)
     errorIDs = arrayfun(@(x) string(x.errorID), errorLog);
     errorIDs(strlength(errorIDs) == 0)="success";
     [cnts,grps] = groupcounts(errorIDs)
+end
+
+function done = exportData(combinedTT,studyName,patientID,exportRoot)
+%exportData exports combined datasets as parquet files in a hive schema
+%folder structure.
+if isempty(combinedTT)
+    done = 0;
+    return
+end
+filePath = fullfile(exportRoot,"study_name=" + studyName,"data_type=combined",...
+    "patient_id="+patientID);
+mkdir(filePath)
+parquetwrite(filePath+"\babelbetes_combined.parquet",combinedTT)
+done = 1;
 end
