@@ -12,88 +12,101 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
     methods (Test)
 
         function mergeEqualTables(testCase)
-            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"totalInsulin");
-            cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
-                'VariableNames',"cgm");
 
-            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', [1 1 1]', ...
-                'VariableNames',["egv", "totalInsulin"]);
+            insulinTT = DataHelper.getTotalInsulinTT();
+            cgmTT = DataHelper.getCGMTT();
+            expectedTT = DataHelper.getMergedTT();
+
             actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
+
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
-        function insulinNanValuesPreserved(testCase)
-            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 NaN 1]', ...
-                'VariableNames',"totalInsulin");
-            cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
-                'VariableNames',"cgm");
+        function insulinNaNValuesPreserved(testCase)
 
-            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', [1 NaN 1]', ...
-                'VariableNames',["egv", "totalInsulin"]);
+            insulinTT = DataHelper.getTotalInsulinTT("Insulin",[1 NaN 1]);
+            cgmTT = DataHelper.getCGMTT();
+            expectedTT = DataHelper.getMergedTT("Insulin",[1 NaN 1]);
+
             actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
+            
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
-        function cgmNanValuesPreserved(testCase)
-            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"totalInsulin");
-            cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 NaN 100]', ...
-                'VariableNames',"cgm");
+        function cgmNaNValuesPreserved(testCase)
 
-            expectedTT = timetable(datetime("today") + minutes([0 5 10])', [100 NaN 100]', [1 1 1]', ...
-                'VariableNames',["egv", "totalInsulin"]);
+            insulinTT = DataHelper.getTotalInsulinTT();
+            cgmTT = DataHelper.getCGMTT("EGV", [100 NaN 100]);
+            expectedTT = DataHelper.getMergedTT("EGV",[100 NaN 100]);
+
             actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
+            
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
         function combinedTableLimitsToIntersection(testCase)
-            insulinTT = timetable(datetime("today") + minutes([0 5 10 15 20])', [1 1 1 1 1]', ...
-                'VariableNames',"totalInsulin");
-            cgmTT = timetable(datetime("today") + minutes([10 15 20 25 30])', [100 100 100 100 100]', ...
-                'VariableNames',"cgm");
 
-            expectedTT = timetable(datetime("today") + minutes([10 15 20])', [100 100 100]', ...
-                [1 1 1]', 'VariableNames',["egv", "totalInsulin"]);
+            insulinTT = DataHelper.getTotalInsulinTT( ...
+                "Times", datetime("today") + minutes([0 5 10 15 20]),...
+                "Insulin",[1 1 1 1 1] ...
+                );
+
+            cgmTT = DataHelper.getCGMTT( ...
+                "Times", datetime("today") + minutes([10 15 20 25 30]),... 
+                "EGV", [100 100 100 100 100]);
+
+            expectedTT = DataHelper.getMergedTT( ...
+                "Times", datetime("today") + minutes([10 15 20]));
+
             actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
+
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
-        function errorOnIrregularTimes(testCase)
-            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"totalInsulin");
-            cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
-                'VariableNames',"cgm");
+        function errorOnIrregularInsulin(testCase)
+            
+            insulinTT = DataHelper.getTotalInsulinTT();
+            cgmTT = DataHelper.getCGMTT();
 
-            % check insulin
-            irregularInsulin = insulinTT([1 3],:);
+            irregularInsulin = insulinTT([1 1],:);
             verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,irregularInsulin), ...
                 AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
 
-            % check cgm
+        end
+
+        function errorOnIrregularEGV(testCase)
+
+            insulinTT = DataHelper.getTotalInsulinTT();
+            cgmTT = DataHelper.getCGMTT();
+
             irregularCGM = cgmTT([1 3],:);
             verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(irregularCGM,insulinTT), ...
                 AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
         end
 
-        function errorWhenNotAlignedOnHour(testCase)
-            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
-                'VariableNames',"totalInsulin");
-            cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
-                'VariableNames',"cgm");
+        function errorWhenNotAlignedOnHourEGV(testCase)
 
-            % check insulin
-            unalignedInsulin = insulinTT;
-            unalignedInsulin.Properties.RowTimes = unalignedInsulin.Properties.RowTimes + seconds(2.5);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,unalignedInsulin), ...
-                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
+            insulinTT = DataHelper.getTotalInsulinTT();
 
-            % check cgm
-            unalignedCGM = cgmTT;
-            unalignedCGM.Properties.RowTimes = unalignedCGM.Properties.RowTimes + minutes(2);
+            unalignedCGM = DataHelper.getCGMTT( ...
+                "Times", DataHelper.DefaultTimesToday+minutes(2));
+
+
             verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(unalignedCGM,insulinTT), ...
                 AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
         end
-    end
 
+        function errorWhenNotAlignedOnHourInsulin(testCase)
+            
+            unalignedInsulin = DataHelper.getTotalInsulinTT( ...
+                "Times", DataHelper.DefaultTimesToday+ seconds(2.5));
+
+            cgmTT = DataHelper.getCGMTT();
+
+       
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,unalignedInsulin), ...
+                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
+
+        end
+    end
 end
