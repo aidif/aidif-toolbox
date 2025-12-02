@@ -6,7 +6,7 @@ function base = FIX_parquetDuration(parquetFilePath, durationColumnName)
 %   from a parquet file and extract the duration unit for a specified
 %   column. It then returns the base value to convert the duration value to
 %   milliseconds. This is necessary because MATLAB's parquetread function doesn't properly
-%   handle duration types and treats them as int64 regardless of wether
+%   handle duration types and treats them as int64 regardless of whether
 %   these represent microseconds or nanoseconds.
 %
 %   Inputs:
