@@ -147,7 +147,7 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
         end
 
         function warningForEGVOver400(testCase)
-            cgmTT = DataHelper.getCGMTT("EGV", [100,200,401]);
+            cgmTT = DataHelper.getCGMTT("EGV", [100,200,400.1]);
             verifyWarning(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
         end
 
@@ -157,7 +157,7 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
         end
 
         function warningForEGVUnder40(testCase)
-            cgmTT = DataHelper.getCGMTT("EGV", [39,100,200]);
+            cgmTT = DataHelper.getCGMTT("EGV", [39.9,100,200]);
             verifyWarning(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
         end
        
