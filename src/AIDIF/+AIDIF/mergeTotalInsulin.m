@@ -1,5 +1,5 @@
 function mergedInsulin = mergeTotalInsulin(basalIrregular,bolusIrregular,maxGap)
-% MERGETOTALINSULIN combine basal and bolus insuling into total insulin
+% MERGETOTALINSULIN combine basal and bolus insulin into total insulin
 %   delivery.
 %
 %   INPUTS:
@@ -20,7 +20,7 @@ function mergedInsulin = mergeTotalInsulin(basalIrregular,bolusIrregular,maxGap)
 %           (`totalInsulin` - combined basal and bolus insulin delivery (U) for
 %           each 5 minute interval.)
 %
-%   See also interpolateBasal, interpolateBolus, mergeGlucoseAndInsulin
+%   See also interpolateBasal, interpolateBolus
 
 %   Author: Michael Wheelock
 %   Date: 2025-11-26
@@ -42,13 +42,13 @@ arguments (Output)
     mergedInsulin timetable
 end
 
-bolusRegular = AIDIF.interpolateBolus(bolusIrregular);
-bolusFlag = AIDIF.findGaps(bolusIrregular.Properties.RowTimes,bolusRegular.Properties.RowTimes,maxGap,false);
-bolusRegular.InsulinDelivery(~bolusFlag) = NaN;
-
 basalRegular = AIDIF.interpolateBasal(basalIrregular);
 basalFlag = AIDIF.findGaps(basalIrregular.Properties.RowTimes,basalRegular.Properties.RowTimes,maxGap,false);
 basalRegular.InsulinDelivery(~basalFlag) = NaN;
+
+[bolusRegular,irregularBolusTimes] = AIDIF.interpolateBolus(bolusIrregular);
+bolusFlag = AIDIF.findGaps(irregularBolusTimes,bolusRegular.Properties.RowTimes,maxGap,false);
+bolusRegular.InsulinDelivery(~bolusFlag) = NaN;
 
 mergedInsulin = synchronize(basalRegular,bolusRegular,'first','fillwithmissing');
 bolusMatch = ismember(basalRegular.Properties.RowTimes,bolusRegular.Properties.RowTimes);
