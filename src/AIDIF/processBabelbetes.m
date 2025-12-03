@@ -16,15 +16,17 @@
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
-function results = processBabelbetes(rootFolder,exportRoot)
+function results = processBabelbetes(rootFolder, exportRoot, queryTable)
 
 arguments (Input)
     rootFolder char {mustBeTextScalar}
     exportRoot char {mustBeTextScalar} = ""
+    queryTable table {mustBeNonempty} = table()
 end
 
-    queryTable = AIDIF.constructHiveQueryTable(rootFolder);
-    queryTable = queryTable(queryTable.study_name=='Flair'& ismember(queryTable.patient_id,["1","10","89"]),:);
+    if isempty(queryTable)        
+        queryTable = AIDIF.constructHiveQueryTable(rootFolder);
+    end
     
     [patientRows, patients] = findgroups(queryTable(:,["study_name" "patient_id"]));
     results = patients;
@@ -52,7 +54,11 @@ function [combinedTT,result] = processPatient(dataType,dataPath)
         result.sorted = cell2struct(wasSorted, dataType);
         result.duplicated = cell2struct(hadDuplicates, dataType);
 
-        base = AIDIF.FIX_parquetDuration(datapaths("bolus"), "delivery_duration");
+        % base = AIDIF.FIX_parquetDuration(datapaths("bolus"), "delivery_duration");
+        % TODO: as we know this is an issue of datatype with python and
+        % MATLAB useage of parquet then lets just use a constant for now
+
+        base = 1e3;
         datasets{"bolus"}.delivery_duration = milliseconds(datasets{"bolus"}.delivery_duration/base);
         datasets{"cgm"} = AIDIF.interpolateCGM(datasets{"cgm"});
         datasets{"totalInsulin"} = AIDIF.mergeTotalInsulin(datasets{"basal"}, datasets{"bolus"}, hours(24));
@@ -119,6 +125,7 @@ end
 filePath = fullfile(exportRoot,"study_name=" + studyName,"data_type=combined",...
     "patient_id="+patientID);
 mkdir(filePath)
-parquetwrite(filePath+"\babelbetes_combined.parquet",combinedTT)
+
+parquetwrite(fullfile(filePath,"babelbetes_combined.parquet"),combinedTT)
 done = 1;
 end

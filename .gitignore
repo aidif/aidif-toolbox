@@ -45,3 +45,6 @@ Add-Ons
 
 #Mishit output
 miss_hit_*.html
+
+#Test output
+tests/outputs/

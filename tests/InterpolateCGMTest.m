@@ -12,90 +12,154 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
     methods (Test)
 
         function firstRowSamplesWithinValidTimes(testCase)
-            testTT = timetable(datetime('today') + minutes([1, 10])', [100, 100]','VariableNames',"cgm");
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(datetime("today") + minutes([5, 10])', [100, 100]',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled,expectedResult);
+            
+            cgmTT = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([1, 10]), ...
+                "EGV", [100, 100]);
+            
+            actual = AIDIF.interpolateCGM(cgmTT);
+
+            expetected = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([5, 10]), ...
+                "EGV", [100, 100]);
+
+            verifyEqual(testCase,actual,expetected);
         end
 
         function lastRowSamplesWithinValidTimes(testCase)
-            testTT = timetable(datetime('today') + minutes([0, 9])',[100, 100]',...
-                'VariableNames',"cgm");
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(datetime("today") + minutes([0, 5])', [100, 100]',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled,expectedResult);
+
+            cgmTT = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([0, 9]), ...
+                "EGV", [100, 100]);
+
+            actual = AIDIF.interpolateCGM(cgmTT);
+
+            expetected = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([0, 5]), ...
+                "EGV", [100, 100]);
+
+            verifyEqual(testCase,actual,expetected);
         end
 
         function interpolationWhenAligned(testCase)
-            testTT = timetable(datetime('today') + minutes([0, 5, 10])', [50, 100, 50]',...
-                'VariableNames',"cgm");
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(datetime("today") + minutes([0, 5, 10])', [50, 100, 50]',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled,expectedResult);
+            cgmTT = DataHelper.getCGMTT();
+            actual = AIDIF.interpolateCGM(cgmTT);
+            expected = DataHelper.getCGMTT();
+            
+            verifyEqual(testCase,actual,expected);
         end
 
         function interpolationWhenUnaligned(testCase)
-            testTT = timetable(datetime('today') + minutes([2.5, 7.5, 12.5])', [50, 100, 50]',...
-                'VariableNames',"cgm");
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(datetime("today") + minutes([5, 10])', [75,75]',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled,expectedResult);
+
+            cgmTT = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([2.5, 7.5, 12.5]));
+
+            actual = AIDIF.interpolateCGM(cgmTT);
+
+            expected = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([5, 10]), ...
+                "EGV", [100, 100]);
+
+            verifyEqual(testCase,actual,expected);
         end
 
-        function interpolateSimple(testCase)
-            testTT = timetable(datetime('today') + minutes([0, 25])', [40, 140]', ...
-                'VariableNames',"cgm");
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(datetime("today") + minutes(0:5:25)', [40, 60, 80, 100, 120, 140]',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled,expectedResult);
+        function interpolateWhenNoGapsOver30MinutesAligned(testCase)
+
+            cgmTT = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([0, 25]), ...
+                "EGV", [40, 140]);
+
+            actual = AIDIF.interpolateCGM(cgmTT);
+
+            expected = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([0, 5, 10, 15, 20, 25]), ...
+                "EGV", [40, 60, 80, 100, 120, 140]);
+
+            verifyEqual(testCase,actual,expected);
+        end
+
+        function interpolateWhenNoGapsOver30MinutesUnaligned(testCase)
+
+            cgmTT = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([0, 26]), ...
+                "EGV", [40, 144]);
+
+            actual = AIDIF.interpolateCGM(cgmTT);
+
+            expected = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes(0:5:25), ...
+                "EGV", [40, 60, 80, 100, 120, 140]);
+
+            verifyEqual(testCase,actual,expected);
         end
         
-        function interpolateSimpleUnaligned(testCase)
-            testTT = timetable(datetime('today') + minutes([1, 31])', [1, 31]', 'VariableNames',"cgm");
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(datetime("today") + minutes(5:5:30)', (5:5:30)',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled.cgm,expectedResult.cgm,'AbsTol',1e-7);
-            verifyEqual(testCase,cgmResampled.Time,expectedResult.Time)
+        function interpolateWhenAllGapsOver30MinutesGivesNaN(testCase)
+            cgmTT = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([0, 50, 100]));
+            actual = AIDIF.interpolateCGM(cgmTT);
+            verifyTrue(testCase, all(isnan(actual.cgm)));
         end
         
-        function interpolateOnlyGaps(testCase)
-            testTT = timetable(datetime('today') + minutes([0, 50, 100])', [100,100,100]', 'VariableNames',"cgm");
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            verifyTrue(testCase, all(isnan(cgmResampled.cgm)));
+        function interpolateWhenSomeGapsOver30Minutes(testCase)
+            cgmTT = DataHelper.getCGMTT( ...
+                "Times", datetime('today') + minutes([0, 5, 36]));
+
+            actual = AIDIF.interpolateCGM(cgmTT);
+
+            expected = DataHelper.getCGMTT(...
+                "Times", datetime('today') + minutes(0:5:35), ...
+                "EGV", [100, 100, NaN([1 6])]);
+
+            verifyEqual(testCase,actual,expected);
         end
-        
-        function noInterpolationFor30MinuteGaps(testCase)
-            testTT = timetable(datetime('today') + minutes([0, 5, 40])', [40, 40, 100]', 'VariableNames', "cgm");
-            cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(datetime("today") + minutes(0:5:40)',[40, 40, NaN([1 7])]',...
-                'VariableNames',"cgm");
-            verifyEqual(testCase,cgmResampled,expectedResult);
+
+        function errorEVGNonNumeric(testCase)
+            cgmTT = DataHelper.getCGMTT("EGV",["90","100","45"]);
+            verifyError(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+
+        function errorEVGNegative(testCase)
+            cgmTT = DataHelper.getCGMTT("EGV",[90,100,-10]);
+            verifyError(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+
+        function errorWhenInsufficientData(testCase)
+            cgmTT = DataHelper.getCGMTT(...
+                "Times", datetime('today') + minutes([0]), ...
+                "EGV", [100]);
+            verifyError(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INSUFFICIENT_DATA)
         end
 
         function errorOnMissingCGMVariableName(testCase)
-            testTT = timetable(datetime('today') + hours([0, 1, 2])', [100, 100, 100]');
-            verifyError(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_MISSING_COLUMN)
+            cgmTT = DataHelper.getCGMTT();
+            cgmTT = removevars(cgmTT,"cgm");
+            verifyError(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_MISSING_COLUMN)
         end
 
         function errorOnUnsortedData(testCase)
-            testTT = timetable(datetime('today') + hours([2, 1, 0])', [100, 100, 100]','VariableNames',"cgm");
-            verifyError(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_UNSORTED_DATA)
+            cgmTT = DataHelper.getCGMTT("Times", flip(DataHelper.DefaultTimesToday));
+            verifyError(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_UNSORTED_DATA)
         end
 
-        function warningForAnyMeasuresOver400(testCase)
-            testTT = timetable(datetime('today') + hours([0, 1, 2])', [350, 400, 450]','VariableNames',"cgm");
-            verifyWarning(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        function noWarningForEGV400(testCase)
+            cgmTT = DataHelper.getCGMTT("EGV", [100,200,400]);
+            verifyWarningFree(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
         end
 
-        function warningForAnyMeasuresUnder40(testCase)
-            testTT = timetable(datetime('today') + hours([0, 1])', [0, 39]','VariableNames',"cgm");
-            verifyWarning(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        function warningForEGVOver400(testCase)
+            cgmTT = DataHelper.getCGMTT("EGV", [100,200,401]);
+            verifyWarning(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
         end
+
+        function noWarningForEGV40(testCase)
+            cgmTT = DataHelper.getCGMTT("EGV", [40,100,200]);
+            verifyWarningFree(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+
+        function warningForEGVUnder40(testCase)
+            cgmTT = DataHelper.getCGMTT("EGV", [39,100,200]);
+            verifyWarning(testCase,@() AIDIF.interpolateCGM(cgmTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+       
     end
 end

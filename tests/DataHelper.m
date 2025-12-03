@@ -1,22 +1,14 @@
 classdef DataHelper
-%DataHelper Utility for generating small, deterministic timetables used in tests
-%
-%   DataHelper provides static factory methods that return MATLAB
-%   timetable objects populated with simple, repeatable data. These
-%   helpers are intended for unit tests and examples where creating
-%   compact CGM and insulin timetables is useful.
-%
-%   Example
-%       cgmTT = DataHelper.getCGMTT();
-%       insulinTT = DataHelper.getTotalInsulinTT();
-%       mergedTT = DataHelper.getMergedTT();
-%
-%   See also: timetable
+%DataHelper Utility for generating data for unit tests
    
     properties (Constant)
         DefaultTimesToday = datetime("today") + minutes([0 5 10]);
         DefaultFlatEGV = [100 100 100];
         DefaultFlatInsulin = [1 1 1];
+        DefaultDataAssestDir = "assets";
+        DefaultDataOutputDir = "outputs";
+        TestStudyA = "StudyA";
+        TestPatient1 = "Patient1";
     end
 
     methods(Static)
@@ -101,5 +93,62 @@ classdef DataHelper
                 'VariableNames',["egv", "totalInsulin"]);
         end
 
+        % Create a sample hive query table for testing
+        % Input:
+        %   testDir - directory under DefaultDataAssestDir containing test data files
+        % Output:
+        %   hiveQueryTable - table with columns ['path', 'data_type', 'study_name', 'patient_id']
+        function hiveQueryTable = getHiveQueryTable(testDir, varargin)
+           
+            p = inputParser;
+            addOptional(p, 'RootDir',  DataHelper.DefaultDataAssestDir);
+            addOptional(p, 'CMGFile',  "cgm.parquet");
+            addOptional(p, 'BasalFile', "basal.parquet");
+            addOptional(p, 'BolusFile', "bolus.parquet");
+            parse(p, varargin{:});
+
+            fullPath = fullfile(pwd, p.Results.RootDir, testDir);
+
+            if ~exist(fullPath, 'dir') == 7
+                error(fprintf("%s testDir is invalid", fullPath));
+            end
+
+            paths = [ ...
+                fullfile(fullPath, p.Results.CMGFile); ...
+                fullfile(fullPath, p.Results.BasalFile); ...
+                fullfile(fullPath, p.Results.BolusFile)];
+            
+            data_types = [ ...
+                "cgm"; ...
+                "basal"; ...
+                "bolus"];
+            
+            study_names = [ ...
+                DataHelper.TestStudyA; ...
+                DataHelper.TestStudyA; ...
+                DataHelper.TestStudyA];
+            
+            patient_ids = [ ...
+                DataHelper.TestPatient1; ...
+                DataHelper.TestPatient1; ...
+                DataHelper.TestPatient1];
+            
+            hiveQueryTable = table(paths, data_types, study_names, patient_ids, ...
+                'VariableNames', {'path', 'data_type', 'study_name', 'patient_id'});
+
+        end
+
+        % Get the full path for the combined output file
+        % Input:
+        %   outputDir - base output directory
+        % Output:
+        %   outputFilePath - full path to the combined output file
+        function outputFilePath = getCombinedOutputFullPath(outputDir)
+            outputFilePath = fullfile(outputDir, ...
+                "study_name=" + DataHelper.TestStudyA, ...
+                "data_type=combined", ...
+                "patient_id="+DataHelper.TestPatient1, ...
+                "babelbetes_combined.parquet");
+        end
     end
 end

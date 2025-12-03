@@ -15,33 +15,33 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
 
             insulinTT = DataHelper.getTotalInsulinTT();
             cgmTT = DataHelper.getCGMTT();
-            expectedTT = DataHelper.getMergedTT();
+            expected = DataHelper.getMergedTT();
 
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
+            actual = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
 
-            verifyEqual(testCase,actualTT,expectedTT);
+            verifyEqual(testCase,actual,expected);
         end
 
         function insulinNaNValuesPreserved(testCase)
 
             insulinTT = DataHelper.getTotalInsulinTT("Insulin",[1 NaN 1]);
             cgmTT = DataHelper.getCGMTT();
-            expectedTT = DataHelper.getMergedTT("Insulin",[1 NaN 1]);
+            expected = DataHelper.getMergedTT("Insulin",[1 NaN 1]);
 
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
+            actual = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
             
-            verifyEqual(testCase,actualTT,expectedTT);
+            verifyEqual(testCase,actual,expected);
         end
 
         function cgmNaNValuesPreserved(testCase)
 
             insulinTT = DataHelper.getTotalInsulinTT();
             cgmTT = DataHelper.getCGMTT("EGV", [100 NaN 100]);
-            expectedTT = DataHelper.getMergedTT("EGV",[100 NaN 100]);
+            expected = DataHelper.getMergedTT("EGV",[100 NaN 100]);
 
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
+            actual = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
             
-            verifyEqual(testCase,actualTT,expectedTT);
+            verifyEqual(testCase,actual,expected);
         end
 
         function combinedTableLimitsToIntersection(testCase)
@@ -55,12 +55,12 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
                 "Times", datetime("today") + minutes([10 15 20 25 30]),... 
                 "EGV", [100 100 100 100 100]);
 
-            expectedTT = DataHelper.getMergedTT( ...
+            expected = DataHelper.getMergedTT( ...
                 "Times", datetime("today") + minutes([10 15 20]));
 
-            actualTT = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
+            actual = AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT);
 
-            verifyEqual(testCase,actualTT,expectedTT);
+            verifyEqual(testCase,actual,expected);
         end
 
         function errorOnIrregularInsulin(testCase)
