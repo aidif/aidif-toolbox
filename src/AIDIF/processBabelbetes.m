@@ -54,11 +54,7 @@ function [combinedTT,result] = processPatient(dataType,dataPath)
         result.sorted = cell2struct(wasSorted, dataType);
         result.duplicated = cell2struct(hadDuplicates, dataType);
 
-        % base = AIDIF.FIX_parquetDuration(datapaths("bolus"), "delivery_duration");
-        % TODO: as we know this is an issue of datatype with python and
-        % MATLAB useage of parquet then lets just use a constant for now
-
-        base = 1e3;
+        base = AIDIF.FIX_parquetDuration(datapaths("bolus"), "delivery_duration");
         datasets{"bolus"}.delivery_duration = milliseconds(datasets{"bolus"}.delivery_duration/base);
         datasets{"cgm"} = AIDIF.interpolateCGM(datasets{"cgm"});
         datasets{"totalInsulin"} = AIDIF.mergeTotalInsulin(datasets{"basal"}, datasets{"bolus"}, hours(24));
