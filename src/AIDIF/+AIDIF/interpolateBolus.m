@@ -1,4 +1,4 @@
-function ttResampled = interpolateBolus(tt)
+function [ttResampled,irregularTimes] = interpolateBolus(tt)
 %   INTERPOLATEBOLUS Interpolates bolus events to regular spaced (5 minute intervals) insulin deliveries.
 %
 %   bolusTT = INTERPOLATEBOLUS(tt)
@@ -9,8 +9,10 @@ function ttResampled = interpolateBolus(tt)
 %        (`delivery_duration` - duration of delivery (>0 for extended boluses, 0 indicates standard bolus)
 %
 %   Outputs:
-%     bolusTT - timetable with regular spaced (5 minute intervals, aligned to the hour) insulin deliveries:
+%     ttResampled - timetable with regular spaced (5 minute intervals, aligned to the hour) insulin deliveries:
 %        (`InsulinDelivery`: insulin amount (U) delivered each interval (U)
+%     irregularTimes = datetime array containing the complete irregular datetime array of bolusTT. This output is 
+%           necessary as an input for findGaps to properly work with bolus datasets with extended deliveries.
 
 %   Author: Jan Wrede
 %   Date: 2025-10-22
@@ -28,6 +30,7 @@ end
 
 arguments (Output)
     ttResampled timetable
+    irregularTimes datetime
 end
 
 ttStandard = tt(tt.delivery_duration==0, "bolus");
@@ -50,6 +53,7 @@ if ~isempty(ttExtended)
 else
     ttCombined = ttStandard;
 end
+irregularTimes = ttCombined.Properties.RowTimes;
 newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Time), "start"):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Time), 'start'))';
 ttResampled = retime(ttCombined,newTimes,"sum");
 end
