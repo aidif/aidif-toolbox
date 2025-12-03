@@ -7,3 +7,4 @@ resamplingBasalRates.m
 findingBasalGaps.m
 resamplingBoluses.m
 resamplingCGM.m
+mergingInsulin.m
