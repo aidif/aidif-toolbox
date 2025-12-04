@@ -25,7 +25,7 @@ function [ttResampled,irregularTimes] = interpolateBolus(tt)
 %   All rights reserved
 
 arguments (Input)
-    tt timetable {validateBolusTable, validateExtendedBolusStopTimes}
+    tt timetable {validateBolusTable, validateExtendedDontOverlap}
 end
 
 arguments (Output)
@@ -94,10 +94,11 @@ function validateBolusTable(tt)
     end
 end
 
-function validateExtendedBolusStopTimes(tt)
-    startEnds = [tt.Properties.RowTimes' ; (tt.Properties.RowTimes + tt.delivery_duration)'];
+function validateExtendedDontOverlap(tt)
+    ttExtended = tt(tt.delivery_duration>0,:);
+    startEnds = [ttExtended.Properties.RowTimes' ; (ttExtended.Properties.RowTimes + ttExtended.delivery_duration)'];
     interleavedTimes = startEnds(:);
     if sum(diff(interleavedTimes,1)<0)
-        error(AIDIF.Constants.ERROR_ID_OVERLAPPING_DELIVERIES, "The timetable contains boluses whose deliveries overlap")
+        error(AIDIF.Constants.ERROR_ID_OVERLAPPING_DELIVERIES, "The timetable contains overlapping extended boluses")
     end
 end
