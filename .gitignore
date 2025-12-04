@@ -50,4 +50,4 @@ miss_hit_*.html
 tests/outputs/
 
 #macOS system files
-
+**/.DS_Store
