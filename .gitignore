@@ -48,3 +48,6 @@ miss_hit_*.html
 
 #Test output
 tests/outputs/
+
+#macOS system files
+**/.DS_Store
