@@ -19,11 +19,11 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
             
             actual = AIDIF.interpolateCGM(cgmTT);
 
-            expetected = DataHelper.getCGMTT( ...
+            expected = DataHelper.getCGMTT( ...
                 "Times", datetime('today') + minutes([5, 10]), ...
                 "EGV", [100, 100]);
 
-            verifyEqual(testCase,actual,expetected);
+            verifyEqual(testCase,actual,expected);
         end
 
         function lastRowSamplesWithinValidTimes(testCase)
@@ -34,11 +34,11 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
 
             actual = AIDIF.interpolateCGM(cgmTT);
 
-            expetected = DataHelper.getCGMTT( ...
+            expected = DataHelper.getCGMTT( ...
                 "Times", datetime('today') + minutes([0, 5]), ...
                 "EGV", [100, 100]);
 
-            verifyEqual(testCase,actual,expetected);
+            verifyEqual(testCase,actual,expected);
         end
 
         function interpolationWhenAligned(testCase)
