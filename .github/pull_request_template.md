@@ -1,13 +1,11 @@
-PR Review Checklist:
+PR Readiness Checklist:
 
-- [ ] Non QMS task:
- 
-or
+- [ ] Tests
+- [ ] Documentation
+- [ ] Coding Standards met 
+- [ ] PR has linked Github Issue
 
-- [ ] QMS task: 
-    - [ ] Tests checked
-    - [ ] Documentation checked
-    - [ ] Coding Standards meet
-    - [ ] PR has Linked Github Issue
+- [ ] Not under QMS
+- [ ] Under QMS 
     - [ ] Requirements linked to in the Github Issue
     - [ ] Design details captured in the Github Issue 
