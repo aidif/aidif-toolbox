@@ -34,7 +34,7 @@ arguments (Output)
 end
 
 ttStandard = tt(tt.delivery_duration==0, "bolus");
-ttStandard.Time = AIDIF.roundTo5Minutes(ttStandard.Time, "closest");
+ttStandard.Properties.RowTimes = AIDIF.roundTo5Minutes(ttStandard.Properties.RowTimes, "closest");
 ttStandard.Properties.VariableNames{'bolus'} = 'InsulinDelivery';
 
 %extended boluses are converted to rates and resampled treating them as basal rates
@@ -53,8 +53,8 @@ if ~isempty(ttExtended)
 else
     ttCombined = ttStandard;
 end
-irregularTimes = ttCombined.Properties.RowTimes;
-newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Time), "start"):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Time), 'start'))';
+irregularTimes = sortrows(ttCombined.Properties.RowTimes);
+newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Properties.RowTimes), "start"):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Properties.RowTimes), 'start'))';
 ttResampled = retime(ttCombined,newTimes,"sum");
 end
 
@@ -77,9 +77,20 @@ function validateBolusTable(tt)
         error(AIDIF.Constants.ERROR_ID_UNSORTED_DATA, "Timetable must be sorted ascending by time.");
     end
     
-    bDuplicated = AIDIF.findDuplicates(tt(:,[]));
-    if sum(bDuplicated)>0
-        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable has %d rows with duplicated datetimes",num2str(sum(bDuplicated)))
+    extendedTimes = tt(tt.delivery_duration>seconds(0),[]);
+    bDuplicatedExtended = AIDIF.findDuplicates(extendedTimes);
+    if sum(bDuplicatedExtended)>0
+        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, ...
+            "Timetable has %s extended boluses with duplicated datetimes", ...
+            num2str(sum(bDuplicatedExtended)))
+    end
+    
+    standardTimes = tt(tt.delivery_duration==seconds(0),[]);
+    bDuplicatedStandard = AIDIF.findDuplicates(standardTimes);
+    if sum(bDuplicatedStandard)>0
+        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, ...
+            "Timetable has %s standard boluses with duplicated datetimes", ...
+            num2str(sum(bDuplicatedStandard)))
     end
 end
 
