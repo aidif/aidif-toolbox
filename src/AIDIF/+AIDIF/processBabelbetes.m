@@ -75,7 +75,7 @@ arguments (Input)
     rootFolder char {mustBeTextScalar}
 
     NameValueArgs.exportPath char {mustBeTextScalar} = ""
-    NameValueArgs.queryTable table {mustBeNonempty} = table()
+    NameValueArgs.queryTable table = table()
 end
 
 queryTable = NameValueArgs.queryTable;

@@ -59,11 +59,6 @@ end
 ttValid = sortrows(ttValid);
 
 ttValidRegular = retime(ttValid, datetimesRegular, 'previous');
-% 
-%mask = ismember(datetimesIrregular, ttValidRegular.Properties.RowTimes);
-%if any(mask)
-%    ttValidRegular(datetimesIrregular(mask), 'valid') = {true};
-%end
 
 validFlags = ttValidRegular.valid;
 end

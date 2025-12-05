@@ -61,7 +61,7 @@ function validateBolusTable(tt)
     end
 
     bolus = tt.bolus;
-    if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus <= 0)
+    if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus < 0)
         error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "''bolus'' column must contain finite, positive values.");
     end
     
