@@ -1,17 +1,65 @@
 function results = processBabelbetes(rootFolder, NameValueArgs)
-% PROCESSBABELBETES this function imports the babelbetes subject data streams
-%   (cgm, basal, and bolus insulin) and time aligns and interpolates the
-%   data.
+% PROCESSBABELBETES imports, resamples, and synchronizes babelbetes subject data streams into a combined timetable.
 %
 %   Syntax:
 %   results = processBabelbetes(rootFolder) - process babelbetes patient
-%       data found in rootfolder. Outputs the combined data tables and error
-%       report for each unique patient
-%   results = processBabelbetes(rootFolder, exportRoot) - exports the
-%       combined patient datatables the the provided file path exportRoot.
-%   results = processBabelbetes(rootFolder, exportRoot, queryTable) - pass
-%   a queryTable to specify which studies and patients of rootFolder to
-%   process.
+%       data found in rootfolder. Results contains the combined timetables
+%       and error log for each patient.
+%   results = processBabelbetes(rootFolder, "exportPath") - exports the
+%       combined patient datatables to the provided path, exportPath.
+%   results = processBabelbetes(rootFolder, "queryTable") - pass in a table
+%       specifying which studies, patients, and data types of rootfolder to
+%       process.
+%   results = processBabelbetes(rootFolder, "exportPath", "queryTable") -
+%       process the specified patient files specified in queryTable and
+%       export to the root path, exportPath.
+%
+%   Inputs:
+%   rootFolder - string scalar of the root path for the babelbetes hive
+%       schema
+%   (name-value pair arguments)
+%   "exportPath" = string scalar of the root path for the combined
+%       timetables to be exported to. Combined tables are saved as paquet files
+%       in a hive file schema.
+%   "queryTable" - queryTable of the babelbetes rootFolder schema. Pass
+%   this argument in to process a subset of the rootFolder data.
+%
+%   Outputs:
+%   results: table containing various processing variables.
+%       'study_name' - string array of study names.
+%       'patient_id' - string array of patient IDs.
+%       'combinedTT' - cell array of tables, containing the time aligned,
+%           merged glucose and insulin for each processed patient.
+%           `egv` - the estimated glucose values (mg/dL) from the patients'
+%           cgm devices.
+%           `totalInsulin` - the total insulin delivery (U) for the combined basal rates and bolus deliveries
+%       'errorLog' - cell array of structs, containing a log of errors and
+%           warnings for each processed patient.
+%
+%   Additional Information:
+%   combinedTT design:
+%       - The combinedTT timetable represents the intersect of all data
+%       streams.
+%       - insulin delivery rates are valid up until a 24 hour gap with no
+%       original insulin data is received. insulin gaps larger than 24
+%       hours are set to NaN.
+%       - EGV gaps are valid up to a 30 minute gap with no new egv signal.
+%       Gaps in egv >= 30 minutes are set to NaN.
+%
+%   errorLog information:
+%       The following errors in the input data structure will prevent the
+%   combinedTT from processing:
+%       - the patient is missing a data file (cgm, basal, or bolus)
+%       - the patient cgm or basal raw data is <2 two rows of data.
+%       - the patient bolus data contains overlapping extended boluses.
+%       - the patient datasets contain duplicate rows.
+%       - the patient datasets contain unsorted rows.
+%
+%       The following issues with the datasets are corrected in processing
+%       and not reported:
+%       - table data types are converted to double
+%       - bolus parquet unit values are interpreted and applied to the
+%           duration array for the delivery_duration variable.
 
 %   Author: Michael Wheelock
 %   Date: 2025-10-08
