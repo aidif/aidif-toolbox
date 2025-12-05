@@ -6,7 +6,7 @@ classdef ProcessBabelbetesTest < matlab.unittest.TestCase
         function testSuccessfulProcessData(testCase)
             testQT = DataHelper.getHiveQueryTable("default_inputs");
                 
-            processBabelbetes(DataHelper.DefaultDataAssestDir,"exportPath" ,DataHelper.DefaultDataOutputDir,"queryTable", testQT);
+            AIDIF.processBabelbetes(DataHelper.DefaultDataAssestDir,"exportPath" ,DataHelper.DefaultDataOutputDir,"queryTable", testQT);
 
             outputPath = DataHelper.getCombinedOutputFullPath(DataHelper.DefaultDataOutputDir);
             

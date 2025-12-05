@@ -128,13 +128,11 @@ hadDuplicates = false;
 
 if ~issortedrows(rawTT)
     wasSorted = false;
-    rawTT = sortrows(rawTT,"datetime","ascend");
 end
 
 dups = AIDIF.findDuplicates(rawTT(:,[]));
 if any(dups) && width(rawTT) == 1
     hadDuplicates = true;
-    rawTT(dups,:) = [];
 end
 
 formattedTable = convertvars(rawTT,1,"double");
