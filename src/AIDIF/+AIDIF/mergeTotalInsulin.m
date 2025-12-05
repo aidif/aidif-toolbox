@@ -46,13 +46,11 @@ basalRegular = AIDIF.interpolateBasal(basalIrregular);
 basalFlag = AIDIF.findGaps(basalIrregular.Properties.RowTimes,basalRegular.Properties.RowTimes,maxGap,false);
 basalRegular.InsulinDelivery(~basalFlag) = NaN;
 
-[bolusRegular,irregularBolusTimes] = AIDIF.interpolateBolus(bolusIrregular);
-bolusFlag = AIDIF.findGaps(irregularBolusTimes,bolusRegular.Properties.RowTimes,maxGap,false);
+bolusRegular = AIDIF.interpolateBolus(bolusIrregular);
+bolusFlag = AIDIF.findGaps(bolusIrregular.Properties.RowTimes,bolusRegular.Properties.RowTimes,maxGap,false);
 bolusRegular.InsulinDelivery(~bolusFlag) = NaN;
 
-mergedInsulin = synchronize(basalRegular,bolusRegular,'first','fillwithmissing');
-bolusMatch = ismember(basalRegular.Properties.RowTimes,bolusRegular.Properties.RowTimes);
-mergedInsulin{~bolusMatch,2} = 0;
+mergedInsulin = synchronize(basalRegular,bolusRegular,'intersection');
 mergedInsulin{:,"totalInsulin"} = mergedInsulin{:,1} + mergedInsulin{:,2};
 mergedInsulin = removevars(mergedInsulin,1:2);
 end
