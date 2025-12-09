@@ -135,7 +135,7 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
         function noErrorOnStandardAndExtendedStartingSameTime(testCase)
             tt = timetable(testCase.startTime + seconds([0,1,1,2])', [1, 2, 3, 4]', hours([0,0,1,0])', ...
                           'VariableNames', {'bolus', 'delivery_duration'});
-            AIDIF.interpolateBolus(tt)
+            AIDIF.interpolateBolus(tt);
         end
 
     end
