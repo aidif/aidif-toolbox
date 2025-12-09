@@ -29,38 +29,36 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
 %   results: table containing various processing variables.
 %       'study_name' - string array of study names.
 %       'patient_id' - string array of patient IDs.
-%       'combinedTT' - cell array of tables, containing the time aligned,
-%           merged glucose and insulin for each processed patient.
-%           `egv` - the estimated glucose values (mg/dL) from the patients'
-%           cgm devices.
-%           `totalInsulin` - the total insulin delivery (U) for the combined basal rates and bolus deliveries
+%       'combinedTT' - cell array of time table containing the 5 minute
+%       resampled glucose insulin deliveries
+%           `egv` - the estimated glucose values (mg/dL)
+%           `totalInsulin` - the total insulin delivered (U) (sum of basal and bolus deliveries)
 %       'errorLog' - cell array of structs, containing a log of errors and
 %           warnings for each processed patient.
 %
 %   Additional Information:
 %   combinedTT design:
-%       - The combinedTT timetable represents the intersect of all data
-%       streams.
+%       - The combinedTT timetable is clipped to the intersection of all data
+%       streams start and end-times.
 %       - insulin delivery rates are valid up until a 24 hour gap with no
-%       original insulin data is received. insulin gaps larger than 24
+%       original insulin data is received. Insulin gaps larger than 24
 %       hours are set to NaN.
-%       - EGV gaps are valid up to a 30 minute gap with no new egv signal.
-%       Gaps in egv >= 30 minutes are set to NaN.
+%       - EGV gaps up to a 30 minutes are linearly interpolated. Gaps >= 30 minutes are set to NaN.
 %
 %   errorLog information:
 %       The following errors in the input data structure will prevent the
 %   combinedTT from processing:
-%       - the patient is missing a data file (cgm, basal, or bolus)
-%       - the patient cgm or basal raw data is <2 two rows of data.
-%       - the patient bolus data contains overlapping extended boluses.
-%       - the patient datasets contain duplicate rows.
-%       - the patient datasets contain unsorted rows.
+%       - a patient is missing a data file (cgm, basal, or bolus)
+%       - a patient cgm or basal raw data is <2 two rows of data.
+%       - a patient bolus contains overlapping extended boluses.
+%       - a patient dataset contain duplicate rows.
+%       - a patient dataset contain unsorted rows.
 %
 %       The following issues with the datasets are corrected in processing
 %       and not reported:
-%       - table data types are converted to double
-%       - bolus parquet unit values are interpreted and applied to the
-%           duration array for the delivery_duration variable.
+%       - cgm values stored as integers are converted to double
+%       - bolus delivery durations are interpreted using the unit [ns or
+%       us] stored in the parquet arrow schema
 
 %   Author: Michael Wheelock
 %   Date: 2025-10-08
@@ -72,73 +70,73 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
 %   Copyright (c) 2025, AIDIF
 %   All rights reserved
 
-arguments (Input)
-    rootFolder char {mustBeTextScalar}
-
-    NameValueArgs.exportPath char {mustBeTextScalar} = ""
-    NameValueArgs.queryTable table = table()
-end
-
-queryTable = NameValueArgs.queryTable;
-if isempty(queryTable)
-    queryTable = AIDIF.constructHiveQueryTable(rootFolder);
-end
-
-[patientRows, patients] = findgroups(queryTable(:,["study_name" "patient_id"]));
-results = patients;
-tic
-[results.combinedTT, results.errorLog] = splitapply(@(x,y) processPatient(x,y), queryTable.data_type, queryTable.path,patientRows);
-toc
-
-if strlength(NameValueArgs.exportPath) ~= 0
-    rowfun(@(x,y,z) exportData(x,y,z,NameValueArgs.exportPath),results,"InputVariables",["combinedTT" "study_name" "patient_id"],"SeparateInputs",true,"ExtractCellContents",true);
-    disp("data exported to " + NameValueArgs.exportPath);
-end
-
-report(results.errorLog)
+    arguments (Input)
+        rootFolder char {mustBeTextScalar}
+    
+        NameValueArgs.exportPath char {mustBeTextScalar} = ""
+        NameValueArgs.queryTable table = table()
+    end
+    
+    queryTable = NameValueArgs.queryTable;
+    if isempty(queryTable)
+        queryTable = AIDIF.constructHiveQueryTable(rootFolder);
+    end
+    
+    [patientRows, patients] = findgroups(queryTable(:, ["study_name" "patient_id"]));
+    results = patients;
+    tic
+    [results.combinedTT, results.errorLog] = splitapply(@(x,y) processPatient(x,y), queryTable.data_type, queryTable.path, patientRows);
+    toc
+    
+    if strlength(NameValueArgs.exportPath) ~= 0
+        rowfun(@(x,y,z) exportData(x,y,z,NameValueArgs.exportPath),results,"InputVariables",["combinedTT" "study_name" "patient_id"],"SeparateInputs",true,"ExtractCellContents",true);
+        disp("data exported to " + NameValueArgs.exportPath);
+    end
+    
+    report(results.errorLog)
 end
 
 function [combinedTT,result] = processPatient(dataType,dataPath)
 
 result = struct("errorID", "", "errorMessage", "");
-try
-    assert(length(dataType)==3,AIDIF.Constants.ERROR_ID_MISSING_FILE,"Missing files for at least one data type");
-
-    datapaths = dictionary(dataType, dataPath);
-
-    datasets = dictionary(dataType, arrayfun(@(x) parquetread(x,"OutputType","timetable"),dataPath,UniformOutput=false));
+    try
+        assert(length(dataType)==3, AIDIF.Constants.ERROR_ID_MISSING_FILE, "Missing files for at least one data type");
+    
+        datapaths = dictionary(dataType, dataPath);
+    
+        datasets = dictionary(dataType, arrayfun(@(x) parquetread(x,"OutputType","timetable"),dataPath,UniformOutput=false));
     datasets(dataType) = cellfun(@(x) convertvars(x,1,"double"), datasets.values,UniformOutput=false);
-
-    base = AIDIF.FIX_parquetDuration(datapaths("bolus"), "delivery_duration");
-    datasets{"bolus"}.delivery_duration = milliseconds(datasets{"bolus"}.delivery_duration/base);
-    datasets{"cgm"} = AIDIF.interpolateCGM(datasets{"cgm"});
-    datasets{"totalInsulin"} = AIDIF.mergeTotalInsulin(datasets{"basal"}, datasets{"bolus"}, hours(24));
-
-    combinedTT = {AIDIF.mergeGlucoseAndInsulin(datasets{"cgm"},datasets{"totalInsulin"})};
-catch ME
-    result.errorID = ME.identifier;
-    result.errorMessage = ME.message;
-    combinedTT = {[]};
-end
+    
+        base = AIDIF.FIX_parquetDuration(datapaths("bolus"), "delivery_duration");
+        datasets{"bolus"}.delivery_duration = milliseconds(datasets{"bolus"}.delivery_duration/base);
+        datasets{"cgm"} = AIDIF.interpolateCGM(datasets{"cgm"});
+        datasets{"totalInsulin"} = AIDIF.mergeTotalInsulin(datasets{"basal"}, datasets{"bolus"}, hours(24));
+    
+        combinedTT = {AIDIF.mergeGlucoseAndInsulin(datasets{"cgm"},datasets{"totalInsulin"})};
+    catch ME
+        result.errorID = ME.identifier;
+        result.errorMessage = ME.message;
+        combinedTT = {[]};
+    end
 end
 
 function report(errorLog)
-
-errorIDs = arrayfun(@(x) string(x.errorID), errorLog);
-errorIDs(strlength(errorIDs) == 0)="success";
-[cnts,grps] = groupcounts(errorIDs)
+    errorIDs = arrayfun(@(x) string(x.errorID), errorLog);
+    errorIDs(strlength(errorIDs) == 0) = "success";
+    [cnts,grps] = groupcounts(errorIDs);
+    disp(table(grps,cnts))
 end
 
 function done = exportData(combinedTT,studyName,patientID,exportRoot)
 
-if isempty(combinedTT)
-    done = 0;
-    return
-end
-filePath = fullfile(exportRoot,"study_name=" + studyName,"data_type=combined",...
-    "patient_id="+patientID);
-mkdir(filePath)
-
-parquetwrite(fullfile(filePath,"babelbetes_combined.parquet"),combinedTT)
-done = 1;
+    if isempty(combinedTT)
+        done = 0;
+        return
+    end
+    filePath = fullfile(exportRoot,"study_name=" + studyName,"data_type=combined",...
+        "patient_id="+patientID);
+    mkdir(filePath)
+    
+    parquetwrite(fullfile(filePath,"babelbetes_combined.parquet"),combinedTT)
+    done = 1;
 end
