@@ -51,6 +51,6 @@ bolusFlag = AIDIF.findGaps(bolusIrregular.Properties.RowTimes,bolusRegular.Prope
 bolusRegular.InsulinDelivery(~bolusFlag) = NaN;
 
 mergedInsulin = synchronize(basalRegular,bolusRegular,'intersection');
-mergedInsulin{:,"totalInsulin"} = mergedInsulin{:,1} + mergedInsulin{:,2};
-mergedInsulin = removevars(mergedInsulin,1:2);
+mergedInsulin{:,"totalInsulin"} = mergedInsulin.InsulinDelivery_basalRegular + mergedInsulin.InsulinDelivery_bolusRegular;
+mergedInsulin = removevars(mergedInsulin,["InsulinDelivery_basalRegular" "InsulinDelivery_bolusRegular"]);
 end

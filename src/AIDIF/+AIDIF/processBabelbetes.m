@@ -9,7 +9,7 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
 %       combined patient datatables to the provided path, exportPath.
 %   results = processBabelbetes(rootFolder, queryTable) - pass in a table
 %       specifying which studies, patients, and data types of rootfolder to
-%       process. 
+%       process.
 %   results = processBabelbetes(rootFolder, exportPath, queryTable) -
 %       process the specified patient files specified in queryTable and
 %       export to the root path, exportPath.
@@ -99,7 +99,8 @@ report(results.errorLog)
 end
 
 function [combinedTT,result] = processPatient(dataType,dataPath)
-    result = struct("errorID", "", "errorMessage", "");
+
+result = struct("errorID", "", "errorMessage", "");
 try
     assert(length(dataType)==3,AIDIF.Constants.ERROR_ID_MISSING_FILE,"Missing files for at least one data type");
 
@@ -122,14 +123,14 @@ end
 end
 
 function report(errorLog)
+
 errorIDs = arrayfun(@(x) string(x.errorID), errorLog);
 errorIDs(strlength(errorIDs) == 0)="success";
 [cnts,grps] = groupcounts(errorIDs)
 end
 
 function done = exportData(combinedTT,studyName,patientID,exportRoot)
-%exportData exports combined datasets as parquet files in a hive schema
-%folder structure.
+
 if isempty(combinedTT)
     done = 0;
     return
