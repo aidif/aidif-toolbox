@@ -5,14 +5,13 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
 %   results = processBabelbetes(rootFolder) - process babelbetes patient
 %       data found in rootfolder. Results contains the combined timetables
 %       and error log for each patient.
-%   results = processBabelbetes(rootFolder, exportPath) - exports the
-%       combined patient datatables to the provided path, exportPath.
-%   results = processBabelbetes(rootFolder, queryTable) - pass in a table
-%       specifying which studies, patients, and data types of rootfolder to
-%       process.
-%   results = processBabelbetes(rootFolder, exportPath, queryTable) -
-%       process the specified patient files specified in queryTable and
-%       export to the root path, exportPath.
+%   results = processBabelbetes(rootFolder, exportPath=str) - exports the
+%       combined patient datatables to the provided path str.
+%   results = processBabelbetes(rootFolder, queryTable=t) - pass in a table, t,
+%       specifying which studies and patients of rootfolder to process.
+%   results = processBabelbetes(rootFolder, exportPath=str, queryTable=t) -
+%       process the specified patient files specified in queryTable t and
+%       export to the exportPath str.
 %
 %   Inputs:
 %   rootFolder - string scalar of the root path for the babelbetes hive
