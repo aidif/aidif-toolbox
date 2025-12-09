@@ -5,23 +5,24 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
 %   results = processBabelbetes(rootFolder) - process babelbetes patient
 %       data found in rootfolder. Results contains the combined timetables
 %       and error log for each patient.
-%   results = processBabelbetes(rootFolder, "exportPath") - exports the
+%   results = processBabelbetes(rootFolder, exportPath) - exports the
 %       combined patient datatables to the provided path, exportPath.
-%   results = processBabelbetes(rootFolder, "queryTable") - pass in a table
+%   results = processBabelbetes(rootFolder, queryTable) - pass in a table
 %       specifying which studies, patients, and data types of rootfolder to
-%       process.
-%   results = processBabelbetes(rootFolder, "exportPath", "queryTable") -
+%       process. 
+%   results = processBabelbetes(rootFolder, exportPath, queryTable) -
 %       process the specified patient files specified in queryTable and
 %       export to the root path, exportPath.
 %
 %   Inputs:
 %   rootFolder - string scalar of the root path for the babelbetes hive
 %       schema
+%
 %   (name-value pair arguments)
-%   "exportPath" = string scalar of the root path for the combined
+%   exportPath = string scalar of the root path for the combined
 %       timetables to be exported to. Combined tables are saved as paquet files
 %       in a hive file schema.
-%   "queryTable" - queryTable of the babelbetes rootFolder schema. Pass
+%   queryTable - queryTable of the babelbetes rootFolder schema. Pass
 %   this argument in to process a subset of the rootFolder data.
 %
 %   Outputs:
@@ -98,16 +99,14 @@ report(results.errorLog)
 end
 
 function [combinedTT,result] = processPatient(dataType,dataPath)
-result = createLogTemplate;
+    result = struct("errorID", "", "errorMessage", "");
 try
     assert(length(dataType)==3,AIDIF.Constants.ERROR_ID_MISSING_FILE,"Missing files for at least one data type");
 
     datapaths = dictionary(dataType, dataPath);
 
     datasets = dictionary(dataType, arrayfun(@(x) parquetread(x,"OutputType","timetable"),dataPath,UniformOutput=false));
-    [datasets(dataType), wasSorted, hadDuplicates] = cellfun(@(x) checkAndFormatTables(x), datasets.values,UniformOutput=false);
-    result.sorted = cell2struct(wasSorted, dataType);
-    result.duplicated = cell2struct(hadDuplicates, dataType);
+    datasets(dataType) = cellfun(@(x) convertvars(x,1,"double"), datasets.values,UniformOutput=false);
 
     base = AIDIF.FIX_parquetDuration(datapaths("bolus"), "delivery_duration");
     datasets{"bolus"}.delivery_duration = milliseconds(datasets{"bolus"}.delivery_duration/base);
@@ -122,43 +121,7 @@ catch ME
 end
 end
 
-function [formattedTable, wasSorted, hadDuplicates] = checkAndFormatTables(rawTT)
-wasSorted = true;
-hadDuplicates = false;
-
-if ~issortedrows(rawTT)
-    wasSorted = false;
-end
-
-dups = AIDIF.findDuplicates(rawTT(:,[]));
-if any(dups) && width(rawTT) == 1
-    hadDuplicates = true;
-end
-
-formattedTable = convertvars(rawTT,1,"double");
-end
-
-function templateLog = createLogTemplate()
-templateLog = struct("sorted", struct, ...
-    "duplicated", struct, ...
-    "errorID", "", ...
-    "errorMessage", "");
-end
-
 function report(errorLog)
-hasValidDuplicated = arrayfun(@(x) ~isempty(fields(x.duplicated)), errorLog);
-validLogs = errorLog(hasValidDuplicated);
-basalDuplicated = sum(arrayfun(@(x) x.duplicated.basal, validLogs))
-cgmDuplicated = sum(arrayfun(@(x) x.duplicated.cgm, validLogs))
-bolusDuplicated = sum(arrayfun(@(x) x.duplicated.bolus, validLogs))
-
-hasValidSorted = arrayfun(@(x) ~isempty(fields(x.sorted)), errorLog);
-validLogs = errorLog(hasValidSorted);
-basalUnsorted = sum(arrayfun(@(x) ~x.sorted.basal, validLogs))
-cgmUnsorted = sum(arrayfun(@(x) ~x.sorted.cgm, validLogs))
-bolusUnsorted = sum(arrayfun(@(x) ~x.sorted.bolus, validLogs))
-
-
 errorIDs = arrayfun(@(x) string(x.errorID), errorLog);
 errorIDs(strlength(errorIDs) == 0)="success";
 [cnts,grps] = groupcounts(errorIDs)
