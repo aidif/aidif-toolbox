@@ -127,15 +127,13 @@ function report(errorLog)
 end
 
 function done = exportData(combinedTT,studyName,patientID,exportRoot)
-
-    if isempty(combinedTT)
-        done = 0;
-        return
-    end
+done = 0;
+if ~isempty(combinedTT)
     filePath = fullfile(exportRoot,"study_name=" + studyName,"data_type=combined",...
         "patient_id="+patientID);
     mkdir(filePath)
-    
+
     parquetwrite(fullfile(filePath,"babelbetes_combined.parquet"),combinedTT)
     done = 1;
+end
 end

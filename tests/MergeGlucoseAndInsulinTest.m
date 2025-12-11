@@ -68,7 +68,7 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
             insulinTT = DataHelper.getTotalInsulinTT();
             cgmTT = DataHelper.getCGMTT();
 
-            irregularInsulin = insulinTT([1 1],:);
+            irregularInsulin = insulinTT([1 3],:);
             verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,irregularInsulin), ...
                 AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
 
@@ -102,8 +102,6 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
                 "Times", DataHelper.DefaultTimesToday+ seconds(2.5));
 
             cgmTT = DataHelper.getCGMTT();
-
-       
             verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,unalignedInsulin), ...
                 AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
 
