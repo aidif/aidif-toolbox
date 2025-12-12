@@ -10,7 +10,7 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
 %   results = processBabelbetes(rootFolder, queryTable=t) - pass in a table, t,
 %       specifying which studies and patients of rootfolder to process.
 %   results = processBabelbetes(rootFolder, exportPath=str, queryTable=t) -
-%       process the specified patient files specified in queryTable t and
+%       process the specified study and patient files specified in queryTable t and
 %       export to the exportPath str.
 %
 %   Inputs:
@@ -21,8 +21,8 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
 %   exportPath = string scalar of the root path for the combined
 %       timetables to be exported to. Combined tables are saved as paquet files
 %       in a hive file schema.
-%   queryTable - queryTable of the babelbetes rootFolder schema. Pass
-%   this argument in to process a subset of the rootFolder data.
+%   patientTable - querytable of babelbetes study_name and patient_id variables. Pass
+%   this argument to process a subset of study and subject data found within rootFolder.
 %
 %   Outputs:
 %   results: table containing various processing variables.
@@ -73,12 +73,12 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
         rootFolder char {mustBeTextScalar}
     
         NameValueArgs.exportPath char {mustBeTextScalar} = ""
-        NameValueArgs.queryTable table = table()
+        NameValueArgs.patientTable table {verifyPatientTable} = table()
     end
-    
-    queryTable = NameValueArgs.queryTable;
-    if isempty(queryTable)
-        queryTable = AIDIF.constructHiveQueryTable(rootFolder);
+
+    queryTable = AIDIF.constructHiveQueryTable(rootFolder);
+    if ~isempty(NameValueArgs.patientTable)
+        queryTable = innerjoin(queryTable,NameValueArgs.patientTable,"Keys",["study_name" "patient_id"]);
     end
     
     [patientRows, patients] = findgroups(queryTable(:, ["study_name" "patient_id"]));
@@ -136,4 +136,24 @@ if ~isempty(combinedTT)
     parquetwrite(fullfile(filePath,"babelbetes_combined.parquet"),combinedTT)
     done = 1;
 end
+end
+
+function verifyPatientTable(patientTable)
+
+if width(patientTable) ~= 2
+    error(AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE,"patientTable must contain 2 variables, 'study_name' and 'patient_id'.")
+end
+
+if ~ismember(patientTable.Properties.VariableNames,"study_name")
+    error(AIDIF.Constants.ERROR_ID_MISSING_COLUMN,"patientTable must contain variable named 'study_name'.")
+end
+
+if ~ismember(patientTable.Properties.VariableNames,"patient_id")
+    error(AIDIF.Constants.ERROR_ID_MISSING_COLUMN,"patientTable must contain variable named 'patient_id'.")
+end
+
+if ~allunique(patientTable)
+    error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS,"patientTable must contain unique rows.")
+end
+
 end
