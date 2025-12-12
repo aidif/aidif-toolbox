@@ -4,19 +4,19 @@ classdef ProcessBabelbetesTest < matlab.unittest.TestCase
 
   
         function testSuccessfulProcessData(testCase)
-            testQT = DataHelper.getHiveQueryTable("default_inputs");
-                
-            AIDIF.processBabelbetes(DataHelper.DefaultDataAssestDir,"exportPath" ,DataHelper.DefaultDataOutputDir,"queryTable", testQT);
-
-            outputPath = DataHelper.getCombinedOutputFullPath(DataHelper.DefaultDataOutputDir);
+            testPath = string(what("tests\assets\").path);
+            outputPath = string(what("tests\outputs\").path);
             
-            testCase.assertEqual(exist(outputPath, "file"), 2);
-            combinedTT = parquetread(outputPath, "OutputType", "timetable");
+            AIDIF.processBabelbetes(testPath,"exportPath" ,outputPath);
+
+            outputDir = AIDIF.constructHiveQueryTable(outputPath);
+            
+            testCase.verifyTrue(isfile(outputDir.path));
+            combinedTT = parquetread(outputDir.path, "OutputType", "timetable");
             testCase.verifyNotEmpty(combinedTT, "Missing output combined data parquet file");
             testCase.verifyNotEmpty(combinedTT.egv, "Missing EVG data");
             testCase.verifyNotEmpty(combinedTT.totalInsulin, "Missing totalInsulin data");
             testCase.verifyNotEmpty(combinedTT.datetime, "Missing datetime data");
-           
         end
     end
 end
