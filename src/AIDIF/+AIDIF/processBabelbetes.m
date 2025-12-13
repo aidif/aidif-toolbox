@@ -73,7 +73,8 @@ function results = processBabelbetes(rootFolder, NameValueArgs)
         rootFolder char {mustBeTextScalar}
     
         NameValueArgs.exportPath char {mustBeTextScalar} = ""
-        NameValueArgs.patientTable table {verifyPatientTable} = table()
+        NameValueArgs.patientTable table {verifyPatientTable} = table('Size',[0, 2], 'VariableTypes',["string" "string"],...
+            'VariableNames',["study_name" "patient_id"])
     end
 
     queryTable = AIDIF.constructHiveQueryTable(rootFolder);
