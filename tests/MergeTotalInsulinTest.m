@@ -17,7 +17,7 @@ classdef MergeTotalInsulinTest < matlab.unittest.TestCase
             bolusTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 2]', minutes([0 0 10])', ...
                 'VariableNames',["bolus" "delivery_duration"]);
             actualTT = AIDIF.mergeTotalInsulin(basalTT,bolusTT,hours(24));
-            expectedTT = timetable(datetime('today')+minutes(0:5:15)',[1.1 1.1 1.1 NaN]', ...
+            expectedTT = timetable(datetime('today')+minutes(0:5:15)',[1.1 1.1 NaN NaN]', ...
                 'VariableNames',"totalInsulin");
             verifyEqual(testCase,actualTT,expectedTT)
         end
@@ -44,13 +44,24 @@ classdef MergeTotalInsulinTest < matlab.unittest.TestCase
             verifyEqual(testCase,actualTT,expectedTT)
         end
 
-        function basalSetsTimeTableLimits(testCase)
+        function returnIntersectionWhenBasalIsBounded(testCase)
             basalTT  = timetable(datetime('today') + minutes([25 30])',[1 1]', ...
                 'VariableNames',"basal_rate");
-            bolusTT = timetable(datetime("today") + hours([0 0.5 1])', [1 1 1]', minutes([0 0 0])', ...
+            bolusTT = timetable(datetime("today") + minutes([0 30 60])', [1 1 1]', minutes([0 0 0])', ...
                 'VariableNames',["bolus" "delivery_duration"]);
             actualTT = AIDIF.mergeTotalInsulin(basalTT,bolusTT,hours(24));
             expectedTT = timetable(datetime('today')+minutes(25)',5/60', ...
+                'VariableNames',"totalInsulin");
+            verifyEqual(testCase,actualTT,expectedTT)
+        end
+
+        function returnIntersectionWhenBolusIsBounded(testCase)
+            basalTT  = timetable(datetime('today') + minutes([0 60])',[1 1]', ...
+                'VariableNames',"basal_rate");
+            bolusTT = timetable(datetime("today") + minutes([25 30])', [1 1]', minutes([0 0])', ...
+                'VariableNames',["bolus" "delivery_duration"]);
+            actualTT = AIDIF.mergeTotalInsulin(basalTT,bolusTT,hours(24));
+            expectedTT = timetable(datetime('today')+minutes([25 30])',[1+(5/60) NaN]', ...
                 'VariableNames',"totalInsulin");
             verifyEqual(testCase,actualTT,expectedTT)
         end

@@ -46,7 +46,7 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
             verifyEqual(testCase,cgmResampled,expectedResult);
         end
 
-        function interpolateSimple(testCase)
+        function interpolateWhenNoGapsOver30MinutesAligned(testCase)
             testTT = timetable(datetime('today') + minutes([0, 25])', [40, 140]', ...
                 'VariableNames',"cgm");
             cgmResampled = AIDIF.interpolateCGM(testTT);
@@ -54,23 +54,23 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
                 'VariableNames',"cgm");
             verifyEqual(testCase,cgmResampled,expectedResult);
         end
-        
-        function interpolateSimpleUnaligned(testCase)
-            testTT = timetable(datetime('today') + minutes([1, 31])', [1, 31]', 'VariableNames',"cgm");
+
+        function interpolateWhenNoGapsOver30MinutesUnaligned(testCase)
+            testTT = timetable(datetime('today') + minutes([1, 31])', [41, 71]', 'VariableNames',"cgm");
             cgmResampled = AIDIF.interpolateCGM(testTT);
-            expectedResult = timetable(datetime("today") + minutes(5:5:30)', (5:5:30)',...
+            expectedResult = timetable(datetime("today") + minutes(5:5:30)', (45:5:70)',...
                 'VariableNames',"cgm");
             verifyEqual(testCase,cgmResampled.cgm,expectedResult.cgm,'AbsTol',1e-7);
             verifyEqual(testCase,cgmResampled.Time,expectedResult.Time)
         end
-        
-        function interpolateOnlyGaps(testCase)
+
+        function interpolateWhenAllGapsOver30MinutesGivesNaN(testCase)
             testTT = timetable(datetime('today') + minutes([0, 50, 100])', [100,100,100]', 'VariableNames',"cgm");
             cgmResampled = AIDIF.interpolateCGM(testTT);
             verifyTrue(testCase, all(isnan(cgmResampled.cgm)));
         end
         
-        function noInterpolationFor30MinuteGaps(testCase)
+        function interpolateWhenSomeGapsOver30Minutes(testCase)
             testTT = timetable(datetime('today') + minutes([0, 5, 40])', [40, 40, 100]', 'VariableNames', "cgm");
             cgmResampled = AIDIF.interpolateCGM(testTT);
             expectedResult = timetable(datetime("today") + minutes(0:5:40)',[40, 40, NaN([1 7])]',...
@@ -78,24 +78,56 @@ classdef InterpolateCGMTest < matlab.unittest.TestCase
             verifyEqual(testCase,cgmResampled,expectedResult);
         end
 
+        function errorEGVNonNumeric(testCase)
+            testTT = timetable(datetime('today') + minutes([0, 5])', string([50, 100])',...
+                'VariableNames',"cgm");
+            verifyError(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+
+        function errorEGVNegative(testCase)
+            testTT = timetable(datetime('today') + minutes([0, 5])', [-50, -100]',...
+                'VariableNames',"cgm");
+            verifyError(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+
+        function errorWhenInsufficientData(testCase)
+            testTT = timetable(datetime('today') + minutes(0), 50,...
+                'VariableNames',"cgm");
+            verifyError(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INSUFFICIENT_DATA)
+        end
+
         function errorOnMissingCGMVariableName(testCase)
-            testTT = timetable(datetime('today') + hours([0, 1, 2])', [100, 100, 100]');
+            testTT = timetable(datetime('today') + minutes([0, 5, 10])', [50, 100, 50]');
             verifyError(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_MISSING_COLUMN)
         end
 
         function errorOnUnsortedData(testCase)
-            testTT = timetable(datetime('today') + hours([2, 1, 0])', [100, 100, 100]','VariableNames',"cgm");
+            testTT = timetable(datetime('today') + minutes([0, 10, 5])', [50, 100, 50]',...
+                'VariableNames',"cgm");
             verifyError(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_UNSORTED_DATA)
         end
 
-        function warningForAnyMeasuresOver400(testCase)
-            testTT = timetable(datetime('today') + hours([0, 1, 2])', [350, 400, 450]','VariableNames',"cgm");
+        function noWarningForEGV400(testCase)
+            testTT = timetable(datetime('today') + minutes([0, 5, 10])', [50, 100, 400]',...
+                'VariableNames',"cgm");
+            verifyWarningFree(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+
+        function warningForEGVOver400(testCase)
+            testTT = timetable(datetime('today') + minutes([0, 5, 10])', [50, 100, 400.1]',...
+                'VariableNames',"cgm");
             verifyWarning(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
         end
 
-        function warningForAnyMeasuresUnder40(testCase)
-            testTT = timetable(datetime('today') + hours([0, 1])', [0, 39]','VariableNames',"cgm");
+        function noWarningForEGV40(testCase)
+            testTT = timetable(datetime('today') + minutes([0, 5, 10])', [40, 50, 60]','VariableNames',"cgm");
+            verifyWarningFree(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
+        end
+
+        function warningForEGVUnder40(testCase)
+            testTT = timetable(datetime('today') + minutes([0, 5, 10])', [39.9, 50, 60]','VariableNames',"cgm");
             verifyWarning(testCase,@() AIDIF.interpolateCGM(testTT), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE)
         end
+       
     end
 end

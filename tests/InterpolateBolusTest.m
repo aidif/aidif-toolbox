@@ -86,13 +86,6 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
             testCase.verifyEqual(ttResampled.InsulinDelivery(10), 6);
         end
 
-        
-        function errorWhenStandardOverlapsExtended(testCase)
-            tt = timetable(testCase.startTime + hours([0,1]'), [1,1]', minutes([90,0]'), ...
-                          'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_OVERLAPPING_DELIVERIES);
-        end
-
         function errorWhenExtendedOverlapsExtended(testCase)
             tt = timetable(testCase.startTime + hours([0,1]'), [1,1]', minutes([90,10]'), ...
                           'VariableNames', {'bolus', 'delivery_duration'});
@@ -110,14 +103,8 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
             testCase.verifyEqual(sum(ttResampled.InsulinDelivery), 2, 'AbsTol', 1e-10);
         end
 
-        function OnDuplicatedEntries(testCase)
-            tt = timetable(testCase.startTime + minutes([3,3])', [1, 2]', seconds([0,0])', ...
-                          'VariableNames', {'bolus', 'delivery_duration'});
-            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS);
-        end
-
         function errorOnInvalidBolusValue(testCase)
-            tt = timetable(testCase.startTime, 0, duration(0,0,0), ...
+            tt = timetable(testCase.startTime, -1, seconds(0), ...
                 'VariableNames', {'bolus', 'delivery_duration'});
             testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE);
         end
@@ -132,6 +119,25 @@ classdef InterpolateBolusTest < matlab.unittest.TestCase
             tt = timetable(testCase.startTime, 5, 'VariableNames', {'bolus'});
             testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_MISSING_COLUMN);
         end
+
+        function errorOnDuplicates(testCase)
+            tt = timetable(testCase.startTime + seconds([0,0])', [1, 2]', seconds([0,0])', ...
+                          'VariableNames', {'bolus', 'delivery_duration'});
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS);
+        end
+
+        function errorOnDuplicatedExtendedBoluses(testCase)
+            tt = timetable(testCase.startTime + seconds([0,1,1,2])', [1, 2, 3, 4]', hours([0,1,1,0])', ...
+                          'VariableNames', {'bolus', 'delivery_duration'});
+            testCase.verifyError(@() AIDIF.interpolateBolus(tt), AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS);
+        end
+
+        function noErrorOnStandardAndExtendedStartingSameTime(testCase)
+            tt = timetable(testCase.startTime + seconds([0,1,1,2])', [1, 2, 3, 4]', hours([0,0,1,0])', ...
+                          'VariableNames', {'bolus', 'delivery_duration'});
+            AIDIF.interpolateBolus(tt);
+        end
+
     end
 end
 

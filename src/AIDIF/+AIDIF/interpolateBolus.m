@@ -1,4 +1,4 @@
-function [ttResampled,irregularTimes] = interpolateBolus(tt)
+function ttResampled = interpolateBolus(tt)
 %   INTERPOLATEBOLUS Interpolates bolus events to regular spaced (5 minute intervals) insulin deliveries.
 %
 %   bolusTT = INTERPOLATEBOLUS(tt)
@@ -11,8 +11,7 @@ function [ttResampled,irregularTimes] = interpolateBolus(tt)
 %   Outputs:
 %     ttResampled - timetable with regular spaced (5 minute intervals, aligned to the hour) insulin deliveries:
 %        (`InsulinDelivery`: insulin amount (U) delivered each interval (U)
-%     irregularTimes = datetime array containing the complete irregular datetime array of bolusTT. This output is 
-%           necessary as an input for findGaps to properly work with bolus datasets with extended deliveries.
+
 
 %   Author: Jan Wrede
 %   Date: 2025-10-22
@@ -25,16 +24,15 @@ function [ttResampled,irregularTimes] = interpolateBolus(tt)
 %   All rights reserved
 
 arguments (Input)
-    tt timetable {validateBolusTable, validateExtendedBolusStopTimes}
+    tt timetable {validateBolusTable, validateExtendedDontOverlap}
 end
 
 arguments (Output)
     ttResampled timetable
-    irregularTimes datetime
 end
 
 ttStandard = tt(tt.delivery_duration==0, "bolus");
-ttStandard.Time = AIDIF.roundTo5Minutes(ttStandard.Time, "closest");
+ttStandard.Properties.RowTimes = AIDIF.roundTo5Minutes(ttStandard.Properties.RowTimes, "closest");
 ttStandard.Properties.VariableNames{'bolus'} = 'InsulinDelivery';
 
 %extended boluses are converted to rates and resampled treating them as basal rates
@@ -53,8 +51,7 @@ if ~isempty(ttExtended)
 else
     ttCombined = ttStandard;
 end
-irregularTimes = ttCombined.Properties.RowTimes;
-newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Time), "start"):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Time), 'start'))';
+newTimes = (AIDIF.roundTo5Minutes(min(ttCombined.Properties.RowTimes), "start"):minutes(5):AIDIF.roundTo5Minutes(max(ttCombined.Properties.RowTimes), 'start'))';
 ttResampled = retime(ttCombined,newTimes,"sum");
 end
 
@@ -64,7 +61,7 @@ function validateBolusTable(tt)
     end
 
     bolus = tt.bolus;
-    if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus <= 0)
+    if ~isnumeric(bolus) || any(~isfinite(bolus)) || any(bolus < 0)
         error(AIDIF.Constants.ERROR_ID_INVALID_VALUE_RANGE, "''bolus'' column must contain finite, positive values.");
     end
     
@@ -77,16 +74,28 @@ function validateBolusTable(tt)
         error(AIDIF.Constants.ERROR_ID_UNSORTED_DATA, "Timetable must be sorted ascending by time.");
     end
     
-    bDuplicated = AIDIF.findDuplicates(tt(:,[]));
-    if sum(bDuplicated)>0
-        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, "Timetable has %d rows with duplicated datetimes",num2str(sum(bDuplicated)))
+    extendedTimes = tt(tt.delivery_duration>seconds(0),[]);
+    bDuplicatedExtended = AIDIF.findDuplicates(extendedTimes);
+    if sum(bDuplicatedExtended)>0
+        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, ...
+            "Timetable has %s extended boluses with duplicated datetimes", ...
+            num2str(sum(bDuplicatedExtended)))
+    end
+    
+    standardTimes = tt(tt.delivery_duration==seconds(0),[]);
+    bDuplicatedStandard = AIDIF.findDuplicates(standardTimes);
+    if sum(bDuplicatedStandard)>0
+        error(AIDIF.Constants.ERROR_ID_DUPLICATE_TIMESTAMPS, ...
+            "Timetable has %s standard boluses with duplicated datetimes", ...
+            num2str(sum(bDuplicatedStandard)))
     end
 end
 
-function validateExtendedBolusStopTimes(tt)
-    startEnds = [tt.Properties.RowTimes' ; (tt.Properties.RowTimes + tt.delivery_duration)'];
+function validateExtendedDontOverlap(tt)
+    ttExtended = tt(tt.delivery_duration>0,:);
+    startEnds = [ttExtended.Properties.RowTimes' ; (ttExtended.Properties.RowTimes + ttExtended.delivery_duration)'];
     interleavedTimes = startEnds(:);
     if sum(diff(interleavedTimes,1)<0)
-        error(AIDIF.Constants.ERROR_ID_OVERLAPPING_DELIVERIES, "The timetable contains boluses whose deliveries overlap")
+        error(AIDIF.Constants.ERROR_ID_OVERLAPPING_DELIVERIES, "The timetable contains overlapping extended boluses")
     end
 end

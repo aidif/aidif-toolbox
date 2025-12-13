@@ -23,7 +23,7 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
-        function insulinNanValuesPreserved(testCase)
+        function insulinNaNValuesPreserved(testCase)
             insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 NaN 1]', ...
                 'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
@@ -35,7 +35,7 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
-        function cgmNanValuesPreserved(testCase)
+        function cgmNaNValuesPreserved(testCase)
             insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
                 'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 NaN 100]', ...
@@ -59,41 +59,42 @@ classdef MergeGlucoseAndInsulinTest < matlab.unittest.TestCase
             verifyEqual(testCase,actualTT,expectedTT);
         end
 
-        function errorOnIrregularTimes(testCase)
-            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
+        function errorOnIrregularInsulin(testCase)
+            insulinTT = timetable(datetime("today") + minutes([0 10])', [1 1]', ...
                 'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
                 'VariableNames',"cgm");
 
-            % check insulin
-            irregularInsulin = insulinTT([1 3],:);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,irregularInsulin), ...
-                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
-
-            % check cgm
-            irregularCGM = cgmTT([1 3],:);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(irregularCGM,insulinTT), ...
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT), ...
                 AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
         end
 
-        function errorWhenNotAlignedOnHour(testCase)
+        function errorOnIrregularEGV(testCase)
             insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
+                'VariableNames',"totalInsulin");
+            cgmTT = timetable(datetime("today") + minutes([0 10])', [100 100]', ...
+                'VariableNames',"cgm");
+
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT), ...
+                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
+        end
+
+        function errorWhenNotAlignedOnHourEGV(testCase)
+            insulinTT = timetable(datetime("today") + minutes([0 5 10])', [1 1 1]', ...
+                'VariableNames',"totalInsulin");
+            cgmTT = timetable(datetime("today") + minutes([1 6 11])', [100 100 100]', ...
+                'VariableNames',"cgm");
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT), ...
+                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
+        end
+
+        function errorWhenNotAlignedOnHourInsulin(testCase)
+            insulinTT = timetable(datetime("today") + minutes([1 6 11])', [1 1 1]', ...
                 'VariableNames',"totalInsulin");
             cgmTT = timetable(datetime("today") + minutes([0 5 10])', [100 100 100]', ...
                 'VariableNames',"cgm");
-
-            % check insulin
-            unalignedInsulin = insulinTT;
-            unalignedInsulin.Properties.RowTimes = unalignedInsulin.Properties.RowTimes + seconds(2.5);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,unalignedInsulin), ...
-                AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
-
-            % check cgm
-            unalignedCGM = cgmTT;
-            unalignedCGM.Properties.RowTimes = unalignedCGM.Properties.RowTimes + minutes(2);
-            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(unalignedCGM,insulinTT), ...
+            verifyError(testCase,@() AIDIF.mergeGlucoseAndInsulin(cgmTT,insulinTT), ...
                 AIDIF.Constants.ERROR_ID_INCONSISTENT_STRUCTURE)
         end
     end
-
 end

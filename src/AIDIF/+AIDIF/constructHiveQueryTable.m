@@ -36,11 +36,11 @@ end
 
 queryTable = struct2table(dir(fullfile(rootPath,"**/*.parquet")));
 queryTable = removevars(queryTable,["bytes" "date" "datenum" "isdir"]);
-queryTable(:,"path") = fullfile(queryTable.folder,queryTable.name);
+queryTable{:,"path"} = fullfile(queryTable.folder,queryTable.name);
 
 % deconstruct 'folder' variable into searchable hive schema components
 queryTable.folder = strrep(queryTable.folder, [fullfile(rootPath) filesep],'');
-queryTable.folder = split(queryTable.folder,filesep);
+queryTable.folder = split(queryTable.folder,filesep,2);
 hiveInfo = split(queryTable.folder,"=");
 
 %insert hive schema queries into table

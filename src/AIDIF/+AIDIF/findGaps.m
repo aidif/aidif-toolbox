@@ -53,17 +53,12 @@ if includeGapStart
     bGapStarts = ttValid.valid(1:end-1) == true & ~ttValid.valid(2:end);
     gapStartTimes = ttValid.Properties.RowTimes(logical([0;bGapStarts]),:);
     ttValid(gapStartTimes,'valid') = {true};
-    ttValid(gapStartTimes+seconds(1e-9),'valid') = {false};
+    ttValid(gapStartTimes+seconds(1),'valid') = {false};
 end
 
 ttValid = sortrows(ttValid);
 
 ttValidRegular = retime(ttValid, datetimesRegular, 'previous');
-% 
-%mask = ismember(datetimesIrregular, ttValidRegular.Properties.RowTimes);
-%if any(mask)
-%    ttValidRegular(datetimesIrregular(mask), 'valid') = {true};
-%end
 
 validFlags = ttValidRegular.valid;
 end
